@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "react-dashboard",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--host"],
+      "port": 5173,
+      "cwd": "bms-dashboard-react"
+    },
+    {
+      "name": "api-server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3002,
+      "cwd": "api-server"
+    }
+  ],
+  "staticFiles": [
+    {
+      "name": "architecture",
+      "path": "architecture.html",
+      "port": 8787
+    }
+  ]
+}

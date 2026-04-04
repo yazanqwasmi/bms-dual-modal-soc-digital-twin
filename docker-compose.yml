@@ -1,0 +1,128 @@
+
+services:
+  # ============================================
+  # InfluxDB 2.x - Time Series Database
+  # ============================================
+  influxdb:
+    image: influxdb:2.7
+    container_name: bms-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
+      - DOCKER_INFLUXDB_INIT_RETENTION=7d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Mock Data Generator
+  # ============================================
+  mock-generator:
+    build:
+      context: ./mock-generator
+      dockerfile: Dockerfile
+    container_name: bms-mock-generator
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+      - INFLUXDB_ORG=${INFLUXDB_ORG}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
+      - WRITE_INTERVAL=5
+      - NUM_MODULES=3
+      - ANOMALY_PROBABILITY=0.02
+      - GENERATE_HISTORY_HOURS=48
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import os,time; t=float(open('/tmp/healthcheck').read()); exit(0 if time.time()-t < 30 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+  # ============================================
+  # API Server - REST & WebSocket Bridge
+  # ============================================
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    container_name: bms-api-server
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+      - INFLUXDB_ORG=${INFLUXDB_ORG}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ============================================
+  # React Dashboard (Production Build)
+  # ============================================
+  dashboard:
+    build:
+      context: ./bms-dashboard-react
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${DASHBOARD_API_URL:-http://localhost:3002}
+    container_name: bms-dashboard
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_USE_REAL_DATA=true
+      - VITE_API_URL=${DASHBOARD_API_URL:-http://localhost:3002}
+    restart: unless-stopped
+
+  # ============================================
+  # LSTM SOC Inference Server
+  # ============================================
+  lstm-inference:
+    build:
+      context: ./soc_estimation/lstm
+      dockerfile: Dockerfile
+    container_name: bms-lstm-inference
+    ports:
+      - "5001:5001"
+    environment:
+      - MODEL_PATH=/app/model/lstm_soc_model.h5
+      - SCALER_PATH=/app/model/scaler_params.json
+      - PORT=5001
+    volumes:
+      - ./soc_estimation/lstm/lstm_soc_model.keras:/app/model/lstm_soc_model.keras:ro
+      - ./soc_estimation/shared/scaler_params.json:/app/model/scaler_params.json:ro
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  influxdb-data:
+  influxdb-config:

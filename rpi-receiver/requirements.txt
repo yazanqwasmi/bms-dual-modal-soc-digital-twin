@@ -1,0 +1,4 @@
+flask>=2.0.0
+influxdb-client>=1.30.0
+numpy>=1.21.0
+requests>=2.28.0
