@@ -281,7 +281,7 @@ export function SettingsPanel({ isOpen, onClose, settings, onSettingsChange }) {
 export function getDefaultSettings() {
   return {
     dataSource: 'mock',
-    apiUrl: 'http://localhost:3002',
+    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3002',
     refreshInterval: 5000,
     enableSoundAlerts: false,
     enableBrowserNotifications: false,
