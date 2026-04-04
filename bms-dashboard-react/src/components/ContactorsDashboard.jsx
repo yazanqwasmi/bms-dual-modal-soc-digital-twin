@@ -278,7 +278,7 @@ export function ContactorsDashboard({ data, settings }) {
             Pack Configuration
           </div>
           <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginTop: '2px' }}>
-            3 Modules / 14 Cells / 6 Temps
+            3 Modules / 12 Cells / 6 Temps
           </div>
         </div>
       </div>

@@ -22,9 +22,9 @@ def _influx_token():
 
 
 MODULE_TOPOLOGY = {
-    "M01": {"num_cells": 5, "num_temps": 2, "cell_offset": 0},
-    "M02": {"num_cells": 5, "num_temps": 2, "cell_offset": 5},
-    "M03": {"num_cells": 4, "num_temps": 2, "cell_offset": 10},
+    "M01": {"num_cells": 4, "num_temps": 2, "cell_offset": 0},
+    "M02": {"num_cells": 4, "num_temps": 2, "cell_offset": 4},
+    "M03": {"num_cells": 4, "num_temps": 2, "cell_offset": 8},
 }
 
 VALID_MODULE_IDS = set(MODULE_TOPOLOGY.keys())

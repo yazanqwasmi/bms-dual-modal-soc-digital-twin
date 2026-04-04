@@ -30,11 +30,11 @@ docker compose up -d
 
  ┌──────────────┐   ┌──────────────┐
  │ Battery M01  │   │ Sensing ESP  │──┐
- │ 5 cells      │──►│ (ADC + NTC)  │  │
+ │ 4 cells      │──►│ (ADC + NTC)  │  │
  │ 2 temps      │   └──────────────┘  │  Wi-Fi   ┌──────────────┐
  ├──────────────┤   ┌──────────────┐  │  (JSON)  │  Raspberry   │
  │ Battery M02  │   │ Sensing ESP  │──┼─────────►│  Pi Receiver │──write──►  InfluxDB 2.7
- │ 5 cells      │──►│ (ADC + NTC)  │  │  HTTP    │  (Flask)     │           :8086
+ │ 4 cells      │──►│ (ADC + NTC)  │  │  HTTP    │  (Flask)     │           :8086
  │ 2 temps      │   └──────────────┘  │  POST    │  :5000       │           7-day retention
  ├──────────────┤   ┌──────────────┐  │          └──────────────┘           bms-telemetry
  │ Battery M03  │   │ Sensing ESP  │──┘                                         │
@@ -48,22 +48,24 @@ docker compose up -d
                     └──────────────┘                               3x retry                 Recharts
                                                                    30s timeout              Dark theme
 
- ┌──── Docker Compose (Development) ────────────────────────────────────────────────────────┐
- │  Mock Generator ──write──►  InfluxDB  ◄──query── API Server ◄──REST/WS──► Dashboard     │
- │  (Python 3.11)              :8086                 :3002                    :3000          │
- │  3 modules, 14 cells                                                                     │
- │  2s intervals                                                                            │
- └──────────────────────────────────────────────────────────────────────────────────────────┘
+ ┌──── Docker Compose (Development) ─────────────────────────────────────────────────────────────┐
+ │  Mock Generator ──write──►  InfluxDB  ◄──query── API Server ◄──REST/WS──► Dashboard         │
+ │  (Python 3.11)              :8086                 :3002  │                  :3000             │
+ │  3 modules, 12 cells                                     │                                   │
+ │  5s intervals               LSTM Inference ◄─── SOC query┘                                  │
+ │                             (TF / Flask)                                                     │
+ │                             :5001                                                            │
+ └──────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Battery Topology
 
 | Module | Cells | Temps | Cell IDs |
 |--------|-------|-------|----------|
-| **M01** | 5 | 2 | C01 - C05 |
-| **M02** | 5 | 2 | C06 - C10 |
-| **M03** | 4 | 2 | C11 - C14 |
-| **Total** | **14** | **6** | **C01 - C14** |
+| **M01** | 4 | 2 | C01 - C04 |
+| **M02** | 4 | 2 | C05 - C08 |
+| **M03** | 4 | 2 | C09 - C12 |
+| **Total** | **12** | **6** | **C01 - C12** |
 
 ## Services
 
@@ -72,7 +74,8 @@ docker compose up -d
 | **InfluxDB** | InfluxDB 2.7 | 8086 | Time-series database, 7-day retention |
 | **API Server** | Node.js 20 / Express | 3002 | REST + WebSocket bridge with retry logic |
 | **React Dashboard** | React 18 / Vite 5 | 3000 | Interactive monitoring UI with Recharts |
-| **Mock Generator** | Python 3.11 | -- | Simulates 3-module battery pack (14 cells) at 2s intervals |
+| **Mock Generator** | Python 3.11 | -- | Simulates 3-module battery pack (12 cells) at 5s intervals |
+| **LSTM Inference** | Python 3.11 / TensorFlow / Flask | 5001 | LSTM SOC estimation (cloud inference) |
 | **RPi Receiver** | Python 3.11 / Flask | 5000 | Wi-Fi receiver for ESP32 JSON payloads (hardware deployment) |
 | **CAN Reader** | Python 3.11 | -- | Optional CAN bus bridge (not in Docker) |
 | **ESP32 Firmware** | Arduino / PlatformIO | -- | Sensing + Master board firmware |
@@ -142,7 +145,7 @@ Configured via `docker-compose.yml` environment:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `WRITE_INTERVAL` | `2` | Data generation interval (seconds) |
+| `WRITE_INTERVAL` | `5` | Data generation interval (seconds) |
 | `NUM_MODULES` | `3` | Number of battery modules |
 | `ANOMALY_PROBABILITY` | `0.02` | Anomaly injection rate (0-1) |
 | `GENERATE_HISTORY_HOURS` | `48` | Hours of historical data to backfill on startup |
@@ -157,7 +160,7 @@ Configured via `docker-compose.yml` environment:
 2. Edit `esp32-firmware/sensing/src/config.h`:
    - Set `WIFI_SSID`, `WIFI_PASSWORD`
    - Set `RPI_HOST` to your Raspberry Pi IP
-   - Set `MODULE_ID` and `NUM_CELLS` per board (M01=5, M02=5, M03=4)
+   - Set `MODULE_ID` and `NUM_CELLS` per board (M01=4, M02=4, M03=4)
    - Map `CELL_ADC_PINS` and `TEMP_ADC_PINS` to your wiring
 3. Flash: `cd esp32-firmware && pio run -e sensing -t upload`
 
@@ -190,6 +193,19 @@ curl -X POST http://<RPI_IP>:5000/api/sensing \
   -d '{"module_id":"M01","cells":[3.7,3.71,3.69,3.70,3.68],"temps":[25.1,25.3],"module_voltage":18.48}'
 ```
 
+## SOC Estimation
+
+Dual-model architecture for State of Charge estimation:
+
+| Model | Location | Parameters | Runs On | Description |
+|-------|----------|-----------|---------|-------------|
+| **NARX** | ESP32 firmware | 449 | Edge (each Sensing ESP) | Fast local SOC in pure C; 1.8 KB flash + 168 B RAM |
+| **LSTM** | Docker container | 2,713 | Cloud (port 5001) | Authoritative SOC from 30-sample sequence; Flask REST API |
+
+Both models are trained on the **LG-E66 battery dataset** (685K samples, 6 drive cycles, 0°C and 25°C). The NARX runs every second on each ESP32 for responsive local tracking, while the cloud LSTM provides higher-accuracy estimates via `POST /predict`.
+
+See [`soc_estimation/README.md`](soc_estimation/README.md) for training instructions, model architecture details, and inference API usage.
+
 ## Project Structure
 
 ```
@@ -201,7 +217,20 @@ curl -X POST http://<RPI_IP>:5000/api/sensing \
 ├── api-server/
 │   ├── Dockerfile                  # Node 20 Alpine
 │   ├── package.json                # Express, InfluxDB client, ws
-│   └── server.js                   # REST API + WebSocket bridge
+│   ├── server.js                   # Entry point: routes + WebSocket setup
+│   └── src/
+│       ├── config/
+│       │   └── environment.js      # Environment variable parsing
+│       ├── routes/
+│       │   ├── health.js           # GET /health
+│       │   └── bms.js              # All /api/v1/bms/* route handlers
+│       ├── utils/
+│       │   ├── influxdb.js         # InfluxDB client + query helpers
+│       │   └── transformers.js     # Data transformation functions
+│       ├── websocket/
+│       │   └── handlers.js         # WebSocket connection + broadcast
+│       └── middleware/
+│           └── index.js            # Request timeout, error handler
 ├── bms-dashboard-react/
 │   ├── Dockerfile                  # Multi-stage: Node build -> Nginx
 │   ├── package.json                # React 18, Vite 5, Recharts
@@ -231,13 +260,37 @@ curl -X POST http://<RPI_IP>:5000/api/sensing \
 │   ├── Dockerfile                  # Python 3.11 slim
 │   ├── requirements.txt            # influxdb-client, numpy
 │   └── generator.py                # 3-module battery simulation engine
-└── rpi-receiver/
-    ├── Dockerfile                  # Python 3.11 slim + Flask
-    ├── requirements.txt            # flask, influxdb-client, numpy
-    ├── config.py                   # Configuration + topology constants
-    ├── validators.py               # JSON payload validation
-    ├── influx_writer.py            # InfluxDB write layer
-    └── receiver.py                 # Flask HTTP server (main entry)
+├── rpi-receiver/
+│   ├── Dockerfile                  # Python 3.11 slim + Flask
+│   ├── requirements.txt            # flask, influxdb-client, numpy
+│   ├── config.py                   # Configuration + topology constants
+│   ├── validators.py               # JSON payload validation
+│   ├── influx_writer.py            # InfluxDB write layer
+│   └── receiver.py                 # Flask HTTP server (main entry)
+├── soc_estimation/
+│   ├── README.md                   # Training & deployment guide
+│   ├── data/
+│   │   └── preprocess.py           # Shared data pipeline (LG-E66 dataset)
+│   ├── narx/
+│   │   ├── narx_model.py           # NARX training script
+│   │   ├── narx_export.py          # Export weights to C for ESP32
+│   │   ├── narx_inference.c        # Pure C inference (generated)
+│   │   ├── narx_inference.h        # Public C API header (generated)
+│   │   └── narx_weights.h          # Weight arrays (generated)
+│   ├── lstm/
+│   │   ├── lstm_model.py           # LSTM training script
+│   │   ├── lstm_inference_server.py # Flask REST API (port 5001)
+│   │   ├── Dockerfile              # TensorFlow + Flask image
+│   │   └── requirements.txt        # Python dependencies
+│   └── shared/
+│       └── scaler_params.json      # Normalization parameters (generated)
+└── LG-E66 Module Data-AVL/         # Battery test dataset (not committed)
+    ├── HWCUST 25C/
+    ├── HWFET 25C/
+    ├── HWGRADE 0C/
+    ├── HWGRADE 25C/
+    ├── US06 0C/
+    └── US06 25C/
 ```
 
 ## Security

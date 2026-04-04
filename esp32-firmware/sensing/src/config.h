@@ -15,16 +15,16 @@
 #define SEND_INTERVAL   2000  // ms between transmissions
 
 // Module identity — CHANGE PER BOARD
-// Board 1: MODULE_ID="M01", NUM_CELLS=5
-// Board 2: MODULE_ID="M02", NUM_CELLS=5
+// Board 1: MODULE_ID="M01", NUM_CELLS=4
+// Board 2: MODULE_ID="M02", NUM_CELLS=4
 // Board 3: MODULE_ID="M03", NUM_CELLS=4
 #define MODULE_ID       "M01"
-#define NUM_CELLS       5
+#define NUM_CELLS       4
 #define NUM_TEMPS       2
 
 // ADC pin mappings for cell voltage sensing
 // Adjust based on your voltage divider network and wiring
-static const int CELL_ADC_PINS[5] = {36, 39, 34, 35, 32};  // GPIO pins (ADC1)
+static const int CELL_ADC_PINS[4] = {36, 39, 34, 35};  // GPIO pins (ADC1)
 
 // NTC thermistor pins
 static const int TEMP_ADC_PINS[2] = {33, 25};  // GPIO pins (ADC1)

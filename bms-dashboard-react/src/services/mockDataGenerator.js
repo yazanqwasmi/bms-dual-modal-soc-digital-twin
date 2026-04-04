@@ -1,16 +1,16 @@
 /**
  * Mock Data Generator - Simulates realistic BMS telemetry
  * Matches the hardware architecture:
- *   - 3 modules: M01 (5 cells), M02 (5 cells), M03 (4 cells)
- *   - 14 cells total, 6 temperature sensors (2 per module)
+ *   - 3 modules: M01 (4 cells), M02 (4 cells), M03 (4 cells)
+ *   - 12 cells total, 6 temperature sensors (2 per module)
  *   - Contactor states: Positive, Negative, Precharge
  *   - Module health tracking with heartbeat timeout
  */
 
 const MODULE_TOPOLOGY = [
-  { id: 'M01', numCells: 5, cellOffset: 0 },
-  { id: 'M02', numCells: 5, cellOffset: 5 },
-  { id: 'M03', numCells: 4, cellOffset: 10 },
+  { id: 'M01', numCells: 4, cellOffset: 0 },
+  { id: 'M02', numCells: 4, cellOffset: 4 },
+  { id: 'M03', numCells: 4, cellOffset: 8 },
 ];
 
 export class BatterySimulator {

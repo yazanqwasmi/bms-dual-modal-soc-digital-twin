@@ -6,9 +6,9 @@
  * Known hardware topology — always return these modules
  */
 export const MODULE_TOPOLOGY = [
-  { id: 'M01', numCells: 5, cellIds: ['C01','C02','C03','C04','C05'] },
-  { id: 'M02', numCells: 5, cellIds: ['C06','C07','C08','C09','C10'] },
-  { id: 'M03', numCells: 4, cellIds: ['C11','C12','C13','C14'] },
+  { id: 'M01', numCells: 4, cellIds: ['C01','C02','C03','C04'] },
+  { id: 'M02', numCells: 4, cellIds: ['C05','C06','C07','C08'] },
+  { id: 'M03', numCells: 4, cellIds: ['C09','C10','C11','C12'] },
 ];
 
 /**

@@ -24,7 +24,7 @@
 <h1>BMS Telemetry — System Architecture</h1>
 <p>WCIM Capstone · March 2026</p>
 
-<svg viewBox="0 0 1760 555" width="1760" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 1760 640" width="1760" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="ah-green"  markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0,9 3,0 6" fill="#3a8a3a"/>
@@ -47,6 +47,9 @@
     <marker id="ah-cyan"   markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0,9 3,0 6" fill="#1a5a8a"/>
     </marker>
+    <marker id="ah-orange" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#aa6020"/>
+    </marker>
   </defs>
 
   <!-- ══════════════════════════════════════════════════
@@ -58,14 +61,14 @@
   <rect x="15" y="45" width="125" height="72" rx="8"
         fill="#111e11" stroke="#2d6a2d" stroke-width="1.6"/>
   <text x="77" y="66" text-anchor="middle" fill="#7dea7d" font-size="12" font-weight="700">Module 1</text>
-  <text x="77" y="82" text-anchor="middle" fill="#7dea7d" font-size="9.5" opacity=".7">5 Cells · 2 Temps</text>
+  <text x="77" y="82" text-anchor="middle" fill="#7dea7d" font-size="9.5" opacity=".7">4 Cells · 2 Temps</text>
   <text x="77" y="96" text-anchor="middle" fill="#7dea7d" font-size="9" opacity=".5">3.3–4.2 V / cell</text>
 
   <!-- Module 2 -->
   <rect x="15" y="135" width="125" height="72" rx="8"
         fill="#111e11" stroke="#2d6a2d" stroke-width="1.6"/>
   <text x="77" y="156" text-anchor="middle" fill="#7dea7d" font-size="12" font-weight="700">Module 2</text>
-  <text x="77" y="172" text-anchor="middle" fill="#7dea7d" font-size="9.5" opacity=".7">5 Cells · 2 Temps</text>
+  <text x="77" y="172" text-anchor="middle" fill="#7dea7d" font-size="9.5" opacity=".7">4 Cells · 2 Temps</text>
   <text x="77" y="186" text-anchor="middle" fill="#7dea7d" font-size="9" opacity=".5">3.3–4.2 V / cell</text>
 
   <!-- Module 3 -->
@@ -89,7 +92,7 @@
   <rect x="196" y="45" width="140" height="72" rx="8"
         fill="#0e1e18" stroke="#1a8a6a" stroke-width="1.6"/>
   <text x="266" y="64" text-anchor="middle" fill="#4de8a8" font-size="11" font-weight="700">Sensing ESP 1</text>
-  <text x="266" y="80" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".7">5 cell V · 2 temps</text>
+  <text x="266" y="80" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".7">4 cell V · 2 temps</text>
   <text x="266" y="94" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".55">Module voltage (sum)</text>
   <text x="266" y="108" text-anchor="middle" fill="#4de8a8" font-size="8.5" opacity=".45">JSON over Wi-Fi</text>
 
@@ -97,7 +100,7 @@
   <rect x="196" y="135" width="140" height="72" rx="8"
         fill="#0e1e18" stroke="#1a8a6a" stroke-width="1.6"/>
   <text x="266" y="154" text-anchor="middle" fill="#4de8a8" font-size="11" font-weight="700">Sensing ESP 2</text>
-  <text x="266" y="170" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".7">5 cell V · 2 temps</text>
+  <text x="266" y="170" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".7">4 cell V · 2 temps</text>
   <text x="266" y="184" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".55">Module voltage (sum)</text>
   <text x="266" y="198" text-anchor="middle" fill="#4de8a8" font-size="8.5" opacity=".45">JSON over Wi-Fi</text>
 
@@ -108,6 +111,9 @@
   <text x="266" y="260" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".7">4 cell V · 2 temps</text>
   <text x="266" y="274" text-anchor="middle" fill="#4de8a8" font-size="9" opacity=".55">Module voltage (sum)</text>
   <text x="266" y="288" text-anchor="middle" fill="#4de8a8" font-size="8.5" opacity=".45">JSON over Wi-Fi</text>
+
+  <!-- NARX annotation -->
+  <text x="266" y="318" text-anchor="middle" fill="#4de8a8" font-size="8.5" opacity=".55" font-style="italic">Each runs NARX SOC (449 params, C)</text>
 
   <!-- Master ESP -->
   <rect x="196" y="330" width="140" height="100" rx="8"
@@ -164,7 +170,7 @@
   <text x="574" y="338" text-anchor="middle" fill="#c09ef8" font-size="13" font-weight="700">Mock Generator</text>
   <text x="574" y="357" text-anchor="middle" fill="#c09ef8" font-size="11" opacity=".8">Python 3.11</text>
   <text x="574" y="374" text-anchor="middle" fill="#c09ef8" font-size="9.5" opacity=".65">Simulates 3 modules</text>
-  <text x="574" y="390" text-anchor="middle" fill="#c09ef8" font-size="9.5" opacity=".55">15 cells · 6 temps</text>
+  <text x="574" y="390" text-anchor="middle" fill="#c09ef8" font-size="9.5" opacity=".55">12 cells · 6 temps</text>
   <text x="574" y="406" text-anchor="middle" fill="#c09ef8" font-size="9.5" opacity=".5">writes every 5 s</text>
 
   <!-- ── Arrow: Mock → InfluxDB  (dashed diagonal)
@@ -189,12 +195,32 @@
   <text x="806" y="168" fill="#4dc8f5" font-size="10" font-weight="600" opacity=".9">Measurements:</text>
   <text x="806" y="186" fill="#4dc8f5" font-size="9.5" opacity=".7">•  pack_metrics</text>
   <text x="806" y="202" fill="#4dc8f5" font-size="9.5" opacity=".7">•  module_metrics (M01–M03)</text>
-  <text x="806" y="218" fill="#4dc8f5" font-size="9.5" opacity=".7">•  cell_metrics (15 cells)</text>
+  <text x="806" y="218" fill="#4dc8f5" font-size="9.5" opacity=".7">•  cell_metrics (12 cells)</text>
   <text x="806" y="234" fill="#4dc8f5" font-size="9.5" opacity=".7">•  contactor_status</text>
   <text x="806" y="250" fill="#4dc8f5" font-size="9.5" opacity=".7">•  module_health</text>
   <text x="806" y="266" fill="#4dc8f5" font-size="9.5" opacity=".7">•  wireless_health</text>
   <text x="806" y="282" fill="#4dc8f5" font-size="9.5" opacity=".7">•  alerts</text>
   <text x="806" y="304" fill="#4dc8f5" font-size="9" opacity=".4">Query language: Flux</text>
+
+  <!-- ══════════════════════════════════════════════════
+       BOX — LSTM Inference Service
+       x=790  y=365  w=185  h=100
+  ══════════════════════════════════════════════════ -->
+  <rect x="790" y="365" width="185" height="105" rx="10"
+        fill="#1e1208" stroke="#aa6020" stroke-width="1.8"/>
+  <text x="882" y="390" text-anchor="middle" fill="#f5a040" font-size="13" font-weight="700">LSTM Inference</text>
+  <text x="882" y="407" text-anchor="middle" fill="#f5a040" font-size="10" opacity=".8">Python 3.11 · TF · Flask</text>
+  <rect x="831" y="412" width="100" height="17" rx="4" fill="rgba(0,0,0,.4)"/>
+  <text x="882" y="424" text-anchor="middle" fill="#f5a040" font-size="10">port  5001</text>
+  <text x="806" y="444" fill="#f5a040" font-size="9.5" opacity=".7">POST  /predict → SOC %</text>
+  <text x="806" y="460" fill="#f5a040" font-size="9" opacity=".45">LSTM · 2,713 params · 30-step seq</text>
+
+  <!-- ── Arrow: API Server → LSTM (SOC query)
+       start=(1100, 350)  end=(976, 415)  label at x=1040 ── -->
+  <line x1="1099" y1="350" x2="976" y2="415"
+        stroke="#aa6020" stroke-width="1.8" marker-end="url(#ah-orange)"/>
+  <text x="1050" y="370" text-anchor="middle" fill="#d08030" font-size="9.5" font-weight="600">SOC query</text>
+  <text x="1050" y="384" text-anchor="middle" fill="#d08030" font-size="8.5" opacity=".6">POST /predict</text>
 
   <!-- ── Arrow: InfluxDB → API  (horizontal  y=210)
        start=975  end=1100  gap=125px  label-cx=1037 ── -->
@@ -208,7 +234,7 @@
        x=1100  y=80  w=170  h=260
        right=1270  center-y=210
   ══════════════════════════════════════════════════ -->
-  <rect x="1100" y="80" width="170" height="260" rx="10"
+  <rect x="1100" y="80" width="170" height="295" rx="10"
         fill="#1e1508" stroke="#8a6020" stroke-width="1.8"/>
   <text x="1185" y="108" text-anchor="middle" fill="#f5c842" font-size="14" font-weight="700">API Server</text>
   <text x="1185" y="125" text-anchor="middle" fill="#f5c842" font-size="11" opacity=".8">Node.js · Express · ws</text>
@@ -220,8 +246,10 @@
   <text x="1116" y="215" fill="#f5c842" font-size="9.5" opacity=".7">GET  /api/v1/bms/alerts</text>
   <text x="1116" y="231" fill="#f5c842" font-size="9.5" opacity=".7">GET  /api/v1/bms/export</text>
   <text x="1116" y="247" fill="#f5c842" font-size="9.5" opacity=".7">GET  /api/v1/bms/contactors</text>
-  <text x="1116" y="263" fill="#f5c842" font-size="9.5" opacity=".7">WS   /ws → pack_update</text>
-  <text x="1116" y="290" fill="#f5c842" font-size="9" opacity=".4">retry 3× · exp backoff</text>
+  <text x="1116" y="263" fill="#f5c842" font-size="9.5" opacity=".7">GET  /api/v1/bms/stats</text>
+  <text x="1116" y="279" fill="#f5c842" font-size="9.5" opacity=".7">GET  /modules/:id/history</text>
+  <text x="1116" y="295" fill="#f5c842" font-size="9.5" opacity=".7">WS   /ws → pack_update</text>
+  <text x="1116" y="322" fill="#f5c842" font-size="9" opacity=".4">retry 3× · exp backoff</text>
 
   <!-- ── Arrow: API → Dashboard  (horizontal  y=210)
        start=1270  end=1395  gap=125px  label-cx=1332 ── -->
@@ -241,7 +269,7 @@
   <text x="1476" y="105" text-anchor="middle" fill="#4da8f5" font-size="10" opacity=".75">React 18 · Vite · Recharts</text>
   <rect x="1425" y="111" width="100" height="17" rx="4" fill="rgba(0,0,0,.4)"/>
   <text x="1476" y="123" text-anchor="middle" fill="#4da8f5" font-size="10">:3000  (Nginx)</text>
-  <text x="1411" y="147" fill="#4da8f5" font-size="10" font-weight="600" opacity=".9">6 Tabs:</text>
+  <text x="1411" y="147" fill="#4da8f5" font-size="10" font-weight="600" opacity=".9">7 Tabs:</text>
   <text x="1411" y="165" fill="#4da8f5" font-size="9.5" opacity=".75">•  Overview</text>
   <text x="1411" y="182" fill="#4da8f5" font-size="9.5" opacity=".75">•  Cells &amp; Modules</text>
   <text x="1411" y="199" fill="#4da8f5" font-size="9.5" opacity=".75">•  Wireless Health</text>
@@ -277,25 +305,27 @@
   <!-- ══════════════════════════════════════════════════
        LEGEND
   ══════════════════════════════════════════════════ -->
-  <rect x="410" y="485" width="1147" height="44" rx="8"
+  <rect x="310" y="525" width="1247" height="44" rx="8"
         fill="#111418" stroke="#222" stroke-width="1"/>
-  <rect x="430"  y="500" width="12" height="12" rx="2" fill="#2d6a2d"/>
-  <text x="448"  y="511" fill="#888" font-size="11">Battery Modules</text>
-  <rect x="580"  y="500" width="12" height="12" rx="2" fill="#1a8a6a"/>
-  <text x="598"  y="511" fill="#888" font-size="11">ESP32 (×4)</text>
-  <rect x="700"  y="500" width="12" height="12" rx="2" fill="#8a2020"/>
-  <text x="718"  y="511" fill="#888" font-size="11">Edge compute</text>
-  <rect x="830"  y="500" width="12" height="12" rx="2" fill="#5a3d8a"/>
-  <text x="848"  y="511" fill="#888" font-size="11">Simulation (dev)</text>
-  <rect x="980"  y="500" width="12" height="12" rx="2" fill="#0f6696"/>
-  <text x="998"  y="511" fill="#888" font-size="11">Time-series DB</text>
-  <rect x="1120" y="500" width="12" height="12" rx="2" fill="#8a6020"/>
-  <text x="1138" y="511" fill="#888" font-size="11">API layer</text>
-  <rect x="1230" y="500" width="12" height="12" rx="2" fill="#1a5a8a"/>
-  <text x="1248" y="511" fill="#888" font-size="11">Frontend</text>
-  <line x1="1340" y1="506" x2="1390" y2="506"
+  <rect x="330"  y="540" width="12" height="12" rx="2" fill="#2d6a2d"/>
+  <text x="348"  y="551" fill="#888" font-size="11">Battery Modules</text>
+  <rect x="480"  y="540" width="12" height="12" rx="2" fill="#1a8a6a"/>
+  <text x="498"  y="551" fill="#888" font-size="11">ESP32 (×4)</text>
+  <rect x="600"  y="540" width="12" height="12" rx="2" fill="#8a2020"/>
+  <text x="618"  y="551" fill="#888" font-size="11">Edge compute</text>
+  <rect x="730"  y="540" width="12" height="12" rx="2" fill="#5a3d8a"/>
+  <text x="748"  y="551" fill="#888" font-size="11">Simulation (dev)</text>
+  <rect x="880"  y="540" width="12" height="12" rx="2" fill="#0f6696"/>
+  <text x="898"  y="551" fill="#888" font-size="11">Time-series DB</text>
+  <rect x="1020" y="540" width="12" height="12" rx="2" fill="#aa6020"/>
+  <text x="1038" y="551" fill="#888" font-size="11">ML Inference</text>
+  <rect x="1150" y="540" width="12" height="12" rx="2" fill="#8a6020"/>
+  <text x="1168" y="551" fill="#888" font-size="11">API layer</text>
+  <rect x="1260" y="540" width="12" height="12" rx="2" fill="#1a5a8a"/>
+  <text x="1278" y="551" fill="#888" font-size="11">Frontend</text>
+  <line x1="1370" y1="546" x2="1420" y2="546"
         stroke="#7050b0" stroke-width="2" stroke-dasharray="5,3"/>
-  <text x="1398" y="511" fill="#888" font-size="11">= dev path only</text>
+  <text x="1428" y="551" fill="#888" font-size="11">= dev path only</text>
 
 </svg>
 
