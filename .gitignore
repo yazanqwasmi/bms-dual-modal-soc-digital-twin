@@ -78,3 +78,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# ============================================
+# Local assistant/tooling files
+# ============================================
+.claude/
+CLAUDE_CODE_PROJECT_BRIEF.txt
