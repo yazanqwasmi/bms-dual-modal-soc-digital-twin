@@ -1,27 +1,51 @@
 # ============================================
-# Environment & Secrets
+# Environment & secrets
 # ============================================
 .env
-.env.local
-.env.*.local
+.env.*
+**/.env
+**/.env.*
 !.env.example
+!**/.env.example
+
+# Keep local-only env variants out of source control
+*.local
+**/*.local
+
+# Keys / certificates
+*.pem
+*.key
+*.crt
+*.p12
+id_rsa
+id_ed25519
 
 # ============================================
 # Node / JavaScript
 # ============================================
 node_modules/
+**/node_modules/
 dist/
-.npm
+build/
+coverage/
+.npm/
+.pnpm-store/
 *.tsbuildinfo
 
 # ============================================
 # Python
 # ============================================
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *.pyo
+*.so
 .venv/
 venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.egg-info/
 
 # ============================================
@@ -30,15 +54,13 @@ venv/
 esp32-firmware/.pio/
 
 # ============================================
-# ML Models (large binary files)
+# ML training artifacts / data cache
 # ============================================
-soc_estimation/lstm/*.keras
-soc_estimation/lstm/*.h5
-soc_estimation/data/*.csv
+soc_estimation/data/cache/
 soc_estimation/data/*.npy
 
 # ============================================
-# Docker volumes
+# Docker runtime volumes
 # ============================================
 influxdb-data/
 influxdb-config/
@@ -49,14 +71,10 @@ influxdb-config/
 *.log
 
 # ============================================
-# OS
+# OS / editor
 # ============================================
 .DS_Store
 Thumbs.db
-
-# ============================================
-# IDE
-# ============================================
 .idea/
 .vscode/
 *.swp
