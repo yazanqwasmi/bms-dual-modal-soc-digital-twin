@@ -84,3 +84,9 @@ Thumbs.db
 # ============================================
 .claude/
 CLAUDE_CODE_PROJECT_BRIEF.txt
+
+# ============================================
+# Project-local docs/artifacts
+# ============================================
+Final_Capstone_Poster_Group_22.pptx
+documents*/
