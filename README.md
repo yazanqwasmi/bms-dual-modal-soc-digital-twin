@@ -77,7 +77,6 @@ docker compose up -d
 | **Mock Generator** | Python 3.11 | -- | Simulates 3-module battery pack (12 cells) at 5s intervals |
 | **LSTM Inference** | Python 3.11 / TensorFlow / Flask | 5001 | LSTM SOC estimation (cloud inference) |
 | **RPi Receiver** | Python 3.11 / Flask | 5000 | Wi-Fi receiver for ESP32 JSON payloads (hardware deployment) |
-| **CAN Reader** | Python 3.11 | -- | Optional CAN bus bridge (not in Docker) |
 | **ESP32 Firmware** | Arduino / PlatformIO | -- | Sensing + Master board firmware |
 
 ## Dashboards
@@ -245,9 +244,6 @@ See [`soc_estimation/README.md`](soc_estimation/README.md) for training instruct
 │       │   ├── DataExportPanel.jsx
 │       │   └── ErrorBoundary.jsx
 │       └── services/               # API client, mock data, notifications
-├── can-reader/
-│   ├── can_to_influxdb.py          # CAN-to-InfluxDB bridge
-│   └── requirements.txt            # python-can, influxdb-client
 ├── esp32-firmware/
 │   ├── platformio.ini              # PlatformIO project config
 │   ├── sensing/src/
@@ -311,9 +307,6 @@ See [`soc_estimation/README.md`](soc_estimation/README.md) for training instruct
 | **RPi Receiver** | Validation | JSON schema + range validation on all payloads |
 | | Pack aggregation | Computes pack_metrics when all modules report |
 | | Health tracking | Monitors per-ESP last-seen timestamps |
-| **CAN Reader** | CAN bus reconnect | 10 retry attempts with exponential backoff |
-| | Write retry | 3 attempts per flush with backoff |
-| | Buffer management | Capped at 5k points to prevent OOM |
 | **API Server** | Query retry | 3 attempts with exponential backoff (500ms base) |
 | | Health endpoint | Verifies InfluxDB connectivity, returns 503 if down |
 | | Request timeout | 30-second timeout on all requests |

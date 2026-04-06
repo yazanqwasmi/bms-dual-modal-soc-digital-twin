@@ -9,11 +9,9 @@
  */
 
 #include <Arduino.h>
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <ESPmDNS.h>
 #include <ArduinoJson.h>
 #include "config.h"
+#include "wifi_utils.h"
 // #include "narx_inference.h"  // TEMPORARILY DISABLED FOR TESTING
 
 // ---- Packet loss tracking ----
@@ -22,11 +20,9 @@ static int  _sendHistoryIdx = 0;
 static int  _sendHistoryCount = 0;
 
 // ---- Forward declarations ----
-void connectWiFi();
 float readCellVoltage(int pin);
 float readTemperature(int pin);
 float readCurrent(int pin);
-bool sendData(const String& json);
 void blinkLED(int times, int delayMs);
 float getPacketLoss();
 void recordSendResult(bool success);
@@ -121,7 +117,7 @@ void loop() {
     Serial.printf("[%s] V=%.2fV I=%.2fA T1=%.1fC SOC=%.1f%% RSSI=%ddBm Loss=%.1f%% -> ",
                   MODULE_ID, moduleVoltage, current, temps[0], soc_estimate, rssi, packetLoss);
 
-    bool ok = sendData(jsonStr);
+    bool ok = sendData(jsonStr, "/api/sensing");
     lastLatencyMs = millis() - sendStart;  // stored for next cycle's payload
     recordSendResult(ok);
 
@@ -134,30 +130,6 @@ void loop() {
     }
 
     delay(SEND_INTERVAL);
-}
-
-// ---- WiFi connection with retry ----
-void connectWiFi() {
-    Serial.printf("Connecting to WiFi '%s'", WIFI_SSID);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.printf("\nConnected! IP: %s\n", WiFi.localIP().toString().c_str());
-        if (!MDNS.begin(ESP_MDNS_NAME)) {
-            Serial.println("mDNS init failed");
-        } else {
-            Serial.printf("mDNS responder started: http://%s.local\n", ESP_MDNS_NAME);
-        }
-    } else {
-        Serial.println("\nWiFi connection failed. Will retry on next loop.");
-    }
 }
 
 // ---- Read cell voltage from ADC pin ----
@@ -199,21 +171,6 @@ float readTemperature(int pin) {
     float tempC = (1.0 / steinhart) - 273.15;
 
     return tempC;
-}
-
-// ---- HTTP POST to Raspberry Pi ----
-bool sendData(const String& json) {
-    HTTPClient http;
-    String url = String("http://") + RPI_HOST + ":" + String(RPI_PORT) + "/api/sensing";
-
-    http.begin(url);
-    http.addHeader("Content-Type", "application/json");
-    http.setTimeout(5000);
-
-    int httpCode = http.POST(json);
-    http.end();
-
-    return httpCode == 200;
 }
 
 // ---- LED blink helper ----

@@ -2,12 +2,8 @@
  * BMS data routes (current status, history, etc.)
  */
 
-import { executeQuery } from '../utils/influxdb.js';
-import { transformCurrentData } from '../utils/transformers.js';
-import { 
-  queryPack, queryModules, queryCells, 
-  queryWireless, queryAlerts, queryContactors, queryHealth 
-} from '../utils/influxdb.js';
+import { executeQuery, queryContactors, queryHealth } from '../utils/influxdb.js';
+import { fetchCurrentSnapshot } from '../utils/snapshot.js';
 import { config } from '../config/environment.js';
 
 /**
@@ -15,17 +11,7 @@ import { config } from '../config/environment.js';
  */
 export async function getCurrentStatus(req, res) {
   try {
-    const [packData, moduleData, cellData, wirelessData, alertsData, contactorData, healthData] = await Promise.all([
-      queryPack(),
-      queryModules(),
-      queryCells(),
-      queryWireless(),
-      queryAlerts(),
-      queryContactors(),
-      queryHealth(),
-    ]);
-
-    const response = transformCurrentData(packData, moduleData, cellData, wirelessData, alertsData, contactorData, healthData);
+    const response = await fetchCurrentSnapshot();
     res.json(response);
   } catch (error) {
     console.error('Error fetching current data:', error);

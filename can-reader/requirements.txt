@@ -1,3 +1,0 @@
-# CAN Bus to InfluxDB Bridge Dependencies
-python-can>=4.0.0
-influxdb-client>=1.36.0

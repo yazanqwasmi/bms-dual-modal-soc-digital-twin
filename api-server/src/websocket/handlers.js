@@ -2,8 +2,7 @@
  * WebSocket handler for real-time updates
  */
 
-import { queryPack, queryModules, queryCells, queryWireless, queryAlerts, queryContactors, queryHealth } from '../utils/influxdb.js';
-import { transformCurrentData } from '../utils/transformers.js';
+import { fetchCurrentSnapshot } from '../utils/snapshot.js';
 
 export function setupWebSocket(wss) {
   wss.on('connection', (ws) => {
@@ -31,17 +30,7 @@ export function setupWebSocket(wss) {
 
 async function sendCurrentData(ws) {
   try {
-    const [packData, moduleData, cellData, wirelessData, alertsData, contactorData, healthData] = await Promise.all([
-      queryPack(),
-      queryModules(),
-      queryCells(),
-      queryWireless(),
-      queryAlerts(),
-      queryContactors(),
-      queryHealth(),
-    ]);
-
-    const data = transformCurrentData(packData, moduleData, cellData, wirelessData, alertsData, contactorData, healthData);
+    const data = await fetchCurrentSnapshot();
 
     if (ws.readyState === 1) {
       ws.send(JSON.stringify({

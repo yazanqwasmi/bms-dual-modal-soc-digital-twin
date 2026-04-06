@@ -379,48 +379,7 @@ setMode(mode)         // Switch between data sources
 
 ---
 
-## 4. CAN Reader (Optional Hardware Bridge)
-
-**File:** `can-reader/can_to_influxdb.py`  
-**Dependencies:** python-can, influxdb-client
-
-### 4.1 CAN Protocol
-
-**Hardware:** Raspberry Pi with MCP2515 CAN HAT (500 kbps)
-
-#### Message Format
-
-| CAN ID | Data Bytes | Interpretation |
-|--------|-----------|-----------------|
-| 0x500 | 1-2: Pack voltage (0.1V/bit, BE uint16)<br/>3-4: Pack current (0.1A/bit, BE int16, signed)<br/>5-6: Avg temp (0.1°C/bit or raw)<br/>7-8: Reserved | Pack-level metrics |
-| 0x510-0x518 | 0-1: Module[0] voltage<br/>2-3: Module[1] voltage<br/>...<br/>6-7: Module[3] voltage | Module voltages (4 per frame) |
-| 0x520-0x528 | Same layout | Module temperatures (4 per frame) |
-
-**Modules:** 35 total (9 frames × 4 per frame = 36 slots; last slot unused)
-
-### 4.2 Data Processing
-
-**Parser (BMSDataParser):**
-1. Unpack struct from raw bytes (big-endian)
-2. Apply voltage/temp scaling (auto-detects range)
-3. Compute power: `(voltage × current) / 1000`
-4. Find min/max cell voltages from stored module data
-5. Calculate delta_v: `(max - min) × 1000` (mV)
-
-**Writer (InfluxDBWriter):**
-- Batched writes: flush on buffer size ≥ 50 points OR ≥ 1s elapsed
-- Retry: 3 attempts with exponential backoff (1s base, 10s max)
-- Buffer overflow protection: cap at 5000 points if write fails
-- Synchronous write API (no async)
-
-### 4.3 Resilience
-- CAN bus reconnection: 10 attempts with exponential backoff (up to 60s)
-- InfluxDB connection retry: 10 attempts before failure
-- Log summary: status update every 10 seconds
-
----
-
-## 5. Data Preprocessing & Feature Engineering
+## 4. Data Preprocessing & Feature Engineering
 
 ### 5.1 Normalization Pipeline
 
@@ -637,11 +596,6 @@ Dashboard (every 2s):
 - 30-second global request timeout
 - Returns 503 on InfluxDB down
 
-**CAN Reader:**
-- 10 CAN bus reconnection attempts
-- 3 write retries with backoff
-- 5k point buffer cap
-
 **RPi Receiver:**
 - Connection retry on startup (10 attempts)
 - Per-write retry: 3 attempts
@@ -673,7 +627,6 @@ Dashboard (every 2s):
 | `api-server/src/routes/bms.js` | BMS REST endpoints (7 handlers) | 233 | JavaScript |
 | `api-server/src/utils/influxdb.js` | InfluxDB client + query helpers | 116 | JavaScript |
 | `api-server/src/utils/transformers.js` | Data transformation + module topology | 124 | JavaScript |
-| `can-reader/can_to_influxdb.py` | CAN protocol parsing + InfluxDB writer | 482 | Python |
 | `soc_estimation/lstm/lstm_model.py` | LSTM training script | 154 | Python |
 | `soc_estimation/lstm/lstm_inference_server.py` | Flask inference API | 119 | Python |
 | `soc_estimation/narx/narx_model.py` | NARX training script | 247 | Python |
@@ -694,7 +647,7 @@ Dashboard (every 2s):
 **Data persistence:** InfluxDB 7-day retention  
 **Model deployment:** NARX on ESP32 (C), LSTM in Docker (Flask)  
 **Dashboard:** React 18 + Recharts, dark theme, responsive  
-**Hardware:** ESP32 (sensing + master), RPi (aggregation), optional CAN reader  
+**Hardware:** ESP32 (sensing + master), RPi (aggregation)  
 **Training data:** LG-E66 (685K samples, 6 drive cycles, 0°C/25°C)  
 **Inference speed:** NARX <10ms, LSTM 50-150ms  
 

@@ -2,48 +2,7 @@ import React, { useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell,
 } from 'recharts'
-
-// Custom Tooltip
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null
-  
-  return (
-    <div style={{
-      background: 'rgba(20, 20, 30, 0.95)',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '12px',
-      padding: '12px 16px',
-      boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-    }}>
-      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '8px' }}>
-        {label}
-      </div>
-      {payload.map((entry, index) => (
-        <div key={index} style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: index < payload.length - 1 ? '4px' : 0,
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: entry.color,
-            boxShadow: `0 0 10px ${entry.color}`,
-          }} />
-          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
-            {entry.name}:
-          </span>
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: '12px' }}>
-            {entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
+import { CustomTooltip, StatCard } from './shared.jsx'
 
 // Alert Card Component
 const AlertCard = ({ alert }) => {
@@ -151,70 +110,6 @@ const AlertCard = ({ alert }) => {
     </div>
   )
 }
-
-// Stat Card
-const StatCard = ({ value, label, icon, color }) => (
-  <div style={{
-    background: 'rgba(255, 255, 255, 0.02)',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
-    borderRadius: '16px',
-    padding: '20px',
-    position: 'relative',
-    overflow: 'hidden',
-    transition: 'all 0.3s ease',
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = 'translateY(-2px)'
-    e.currentTarget.style.borderColor = `${color}40`
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = 'translateY(0)'
-    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)'
-  }}
-  >
-    {/* Top accent */}
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '3px',
-      background: `linear-gradient(135deg, ${color} 0%, ${color}99 100%)`,
-    }} />
-    
-    {/* Background glow */}
-    <div style={{
-      position: 'absolute',
-      top: '-20px',
-      right: '-20px',
-      width: '80px',
-      height: '80px',
-      background: `radial-gradient(circle, ${color}20 0%, transparent 70%)`,
-      pointerEvents: 'none',
-    }} />
-    
-    <div style={{ fontSize: '24px', marginBottom: '12px' }}>{icon}</div>
-    
-    <div style={{
-      fontSize: '32px',
-      fontWeight: 800,
-      color,
-      fontFamily: '"JetBrains Mono", monospace',
-      marginBottom: '4px',
-    }}>
-      {value}
-    </div>
-    
-    <div style={{
-      fontSize: '12px',
-      color: 'rgba(255,255,255,0.5)',
-      textTransform: 'uppercase',
-      letterSpacing: '1px',
-    }}>
-      {label}
-    </div>
-  </div>
-)
 
 // Filter Button
 const FilterButton = ({ active, onClick, children }) => (

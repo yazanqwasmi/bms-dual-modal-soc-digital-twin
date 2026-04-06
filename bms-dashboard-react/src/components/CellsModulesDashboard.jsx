@@ -2,48 +2,7 @@ import React, { useState, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, Cell
 } from 'recharts'
-
-// Custom Tooltip
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null
-  
-  return (
-    <div style={{
-      background: 'rgba(20, 20, 30, 0.95)',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '12px',
-      padding: '12px 16px',
-      boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-    }}>
-      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '8px' }}>
-        {label}
-      </div>
-      {payload.map((entry, index) => (
-        <div key={index} style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: index < payload.length - 1 ? '4px' : 0,
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: entry.color,
-            boxShadow: `0 0 10px ${entry.color}`,
-          }} />
-          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
-            {entry.name}:
-          </span>
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: '12px' }}>
-            {entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
+import { CustomTooltip } from './shared.jsx'
 
 // Cell Voltage Heat Map Cell
 const CellVoltageCell = ({ cell, isSelected, onClick }) => {

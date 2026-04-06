@@ -40,16 +40,6 @@ class DataService {
     }
   }
 
-  connectWebSocket(_onData, onStatus) {
-    if (onStatus) onStatus('connected')
-  }
-
-  disconnectWebSocket() {}
-
-  get isWebSocketConnected() {
-    return false
-  }
-
   getMode() {
     return this.mode
   }

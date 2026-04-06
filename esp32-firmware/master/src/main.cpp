@@ -13,20 +13,16 @@
  */
 
 #include <Arduino.h>
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <ESPmDNS.h>
 #include <ArduinoJson.h>
 #include "config.h"
+#include "wifi_utils.h"
 
 // Module last-seen timestamps (milliseconds, from millis())
 unsigned long moduleLastSeen[NUM_MODULES] = {0, 0, 0};
 
 // ---- Forward declarations ----
-void connectWiFi();
 const char* readContactor(int pin);
 void updateModuleHealth();
-bool sendData(const String& json);
 void blinkLED(int times, int delayMs);
 
 // ---- Setup ----
@@ -102,7 +98,7 @@ void loop() {
     }
     Serial.print("-> ");
 
-    if (sendData(jsonStr)) {
+    if (sendData(jsonStr, "/api/master")) {
         Serial.println("OK");
         blinkLED(1, 100);
     } else {
@@ -111,30 +107,6 @@ void loop() {
     }
 
     delay(SEND_INTERVAL);
-}
-
-// ---- WiFi connection ----
-void connectWiFi() {
-    Serial.printf("Connecting to WiFi '%s'", WIFI_SSID);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.printf("\nConnected! IP: %s\n", WiFi.localIP().toString().c_str());
-        if (!MDNS.begin(ESP_MDNS_NAME)) {
-            Serial.println("mDNS init failed");
-        } else {
-            Serial.printf("mDNS responder started: http://%s.local\n", ESP_MDNS_NAME);
-        }
-    } else {
-        Serial.println("\nWiFi connection failed. Will retry.");
-    }
 }
 
 // ---- Read contactor GPIO ----
@@ -155,21 +127,6 @@ void updateModuleHealth() {
     //   1. Sensing ESPs broadcast a UDP packet to a known port
     //   2. Master listens on that port and updates moduleLastSeen[]
     //   3. Health is determined by elapsed time since last heartbeat
-}
-
-// ---- HTTP POST to Raspberry Pi ----
-bool sendData(const String& json) {
-    HTTPClient http;
-    String url = String("http://") + RPI_HOST + ":" + String(RPI_PORT) + "/api/master";
-
-    http.begin(url);
-    http.addHeader("Content-Type", "application/json");
-    http.setTimeout(5000);
-
-    int httpCode = http.POST(json);
-    http.end();
-
-    return httpCode == 200;
 }
 
 // ---- LED blink helper ----

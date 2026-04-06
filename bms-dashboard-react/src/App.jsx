@@ -204,18 +204,9 @@ function App() {
 
     fetchInitial()
 
-    // Connect WebSocket for live current data
-    dataService.connectWebSocket(
-      (wsData) => {
-        applyCurrentData(wsData)
-      },
-      (status) => {
-        setConnectionStatus(status)
-      }
-    )
+    setConnectionStatus('connected')
 
-    // Poll current snapshot as a safety net so disconnect/reconnect state is reflected
-    // even if WebSocket drops packets or reconnects.
+    // Poll current snapshot
     const fetchCurrent = async () => {
       try {
         const currentData = await dataService.getCurrentData()
@@ -238,7 +229,6 @@ function App() {
     historyInterval = setInterval(fetchHistory, 15000)
 
     return () => {
-      dataService.disconnectWebSocket()
       if (currentInterval) clearInterval(currentInterval)
       if (historyInterval) clearInterval(historyInterval)
     }

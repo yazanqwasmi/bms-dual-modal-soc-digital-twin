@@ -2,48 +2,7 @@ import React from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts'
-
-// Custom Tooltip
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null
-  
-  return (
-    <div style={{
-      background: 'rgba(20, 20, 30, 0.95)',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '12px',
-      padding: '12px 16px',
-      boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-    }}>
-      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '8px' }}>
-        {label}
-      </div>
-      {payload.map((entry, index) => (
-        <div key={index} style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: index < payload.length - 1 ? '4px' : 0,
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: entry.color,
-            boxShadow: `0 0 10px ${entry.color}`,
-          }} />
-          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
-            {entry.name}:
-          </span>
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: '12px' }}>
-            {entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
+import { CustomTooltip, StatCard } from './shared.jsx'
 
 // Signal Strength Indicator
 const SignalStrengthIndicator = ({ rssi, size = 'md' }) => {
@@ -224,84 +183,6 @@ const ModuleHealthCard = ({ module, index }) => {
     </div>
   )
 }
-
-// Large Stat Card
-const StatCard = ({ title, value, unit, icon, color, trend }) => (
-  <div style={{
-    background: 'rgba(255, 255, 255, 0.02)',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
-    borderRadius: '20px',
-    padding: '24px',
-    position: 'relative',
-    overflow: 'hidden',
-    transition: 'all 0.3s ease',
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = 'translateY(-2px)'
-    e.currentTarget.style.borderColor = `${color}40`
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = 'translateY(0)'
-    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)'
-  }}
-  >
-    {/* Glow effect */}
-    <div style={{
-      position: 'absolute',
-      top: '-50%',
-      right: '-50%',
-      width: '150px',
-      height: '150px',
-      background: `radial-gradient(circle, ${color}10 0%, transparent 70%)`,
-      pointerEvents: 'none',
-    }} />
-    
-    {/* Icon */}
-    <div style={{
-      fontSize: '28px',
-      marginBottom: '16px',
-    }}>
-      {icon}
-    </div>
-    
-    {/* Value */}
-    <div style={{
-      fontSize: '36px',
-      fontWeight: 800,
-      marginBottom: '4px',
-      fontFamily: '"JetBrains Mono", monospace',
-      background: `linear-gradient(135deg, ${color} 0%, ${color}99 100%)`,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-    }}>
-      {value}<span style={{ fontSize: '18px', opacity: 0.8 }}>{unit}</span>
-    </div>
-    
-    {/* Title */}
-    <div style={{
-      fontSize: '13px',
-      color: 'rgba(255,255,255,0.5)',
-      textTransform: 'uppercase',
-      letterSpacing: '1px',
-    }}>
-      {title}
-    </div>
-    
-    {/* Trend */}
-    {trend && (
-      <div style={{
-        marginTop: '12px',
-        fontSize: '12px',
-        color: trend > 0 ? '#ff4757' : '#00ff88',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-      }}>
-        {trend > 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}% from avg
-      </div>
-    )}
-  </div>
-)
 
 export function WirelessHealthDashboard({ data }) {
   if (!data.current) {
