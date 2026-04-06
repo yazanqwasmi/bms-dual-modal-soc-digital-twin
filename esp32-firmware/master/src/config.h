@@ -10,9 +10,12 @@
 #define WIFI_PASSWORD   "BMS_Network"
 
 // Raspberry Pi receiver endpoint
-#define RPI_HOST        "192.168.205.72"
+#define RPI_HOST        "bmsgateway.local"
 #define RPI_PORT        5000
 #define SEND_INTERVAL   2000  // ms between transmissions
+
+// This board's mDNS hostname (for diagnostics/discovery)
+#define ESP_MDNS_NAME   "bms-master"
 
 // Contactor GPIO pins (digital input — HIGH = Closed, LOW = Open)
 #define PIN_CONTACTOR_POSITIVE   4

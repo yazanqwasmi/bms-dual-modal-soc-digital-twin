@@ -15,6 +15,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ESPmDNS.h>
 #include <ArduinoJson.h>
 #include "config.h"
 
@@ -126,6 +127,11 @@ void connectWiFi() {
 
     if (WiFi.status() == WL_CONNECTED) {
         Serial.printf("\nConnected! IP: %s\n", WiFi.localIP().toString().c_str());
+        if (!MDNS.begin(ESP_MDNS_NAME)) {
+            Serial.println("mDNS init failed");
+        } else {
+            Serial.printf("mDNS responder started: http://%s.local\n", ESP_MDNS_NAME);
+        }
     } else {
         Serial.println("\nWiFi connection failed. Will retry.");
     }
