@@ -3,7 +3,7 @@
 // =============================================================================
 // Sensing ESP32 Configuration
 // =============================================================================
-// Flash one per module. Change MODULE_ID and NUM_CELLS per board.
+// Flash one per module. Change MODULE_ID / ESP_MDNS_NAME per board.
 
 // Wi-Fi credentials
 #define WIFI_SSID       "BMS_Network"
@@ -18,43 +18,52 @@
 #define ESP_MDNS_NAME   "bms-sensing-m01"
 
 // Module identity — CHANGE PER BOARD
-// Board 1: MODULE_ID="M01", NUM_CELLS=4
-// Board 2: MODULE_ID="M02", NUM_CELLS=4
-// Board 3: MODULE_ID="M03", NUM_CELLS=4
 #define MODULE_ID       "M01"
 #define NUM_CELLS       4
 #define NUM_TEMPS       2
 
-// ADC pin mappings for cell voltage sensing
-// Adjust based on your voltage divider network and wiring
-static const int CELL_ADC_PINS[4] = {36, 39, 34, 35};  // GPIO pins (ADC1)
+// ---------------- Optional current sensor ----------------
+#define CURRENT_ADC_PIN       26
+#define CURRENT_SENSITIVITY   0.066f
+#define CURRENT_ZERO_OFFSET   1.65f
 
-// NTC thermistor pins
-static const int TEMP_ADC_PINS[2] = {33, 25};  // GPIO pins (ADC1)
+// ---------------- General ----------------
+#define PACKET_LOSS_WINDOW    20
+#define LED_PIN               2
+#define ADC_RESOLUTION        4095.0f
+#define ADC_REF_VOLTAGE       3.3f
 
-// NTC thermistor parameters (Steinhart-Hart)
-#define NTC_SERIES_RESISTOR   10000.0  // 10k ohm series resistor
-#define NTC_NOMINAL_RESISTANCE 10000.0 // 10k ohm at 25C
-#define NTC_NOMINAL_TEMP      25.0
-#define NTC_B_COEFFICIENT     3950.0
+// ---------------- BQ76920 / sensing pins ----------------
+#define SDA_PIN               17
+#define SCL_PIN               18
+#define BOOT_PIN              8
+#define BQ_ADDR               0x18
 
-// Voltage divider ratio (if using resistor divider for cell voltage)
-// V_cell = V_adc * DIVIDER_RATIO
-#define VOLTAGE_DIVIDER_RATIO 2.0  // e.g., 10k/10k divider = 2:1
+#define THERM1_PIN            1
+#define THERM2_PIN            2
 
-// ADC calibration
-#define ADC_RESOLUTION   4095.0
-#define ADC_REF_VOLTAGE  3.3
+#define SYS_CTRL1             0x04
+#define VC1_HI                0x0C
+#define VC2_HI                0x0E
+#define VC3_HI                0x10
+#define VC4_HI                0x12
+#define VC5_HI                0x14
+#define ADCGAIN1              0x50
+#define ADCOFFSET             0x51
+#define ADCGAIN2              0x59
 
-// Current sensor (Hall-effect or shunt-based, e.g. ACS712)
-// Output voltage at zero current is ADC_REF_VOLTAGE/2 (1.65V)
-// Sensitivity: 66mV/A for ACS712-30A variant
-#define CURRENT_ADC_PIN       26           // GPIO pin for current sensor
-#define CURRENT_SENSITIVITY   0.066f       // V/A (ACS712-30A)
-#define CURRENT_ZERO_OFFSET   (ADC_REF_VOLTAGE / 2.0f)  // Midpoint = 0A
+// ---------------- Thermistor settings ----------------
+#define VCC_MV                3300.0f
+#define R_FIXED               10000.0f
+#define R0                    10000.0f
+#define T0_K                  298.15f
+#define BETA                  3435.0f
 
-// Packet loss tracking window
-#define PACKET_LOSS_WINDOW    20  // Track last N send attempts
+// ---------------- Moving average ----------------
+#define AVG_N                 8
 
-// Status LED
-#define LED_PIN          2  // Built-in LED on most ESP32 boards
+// Read C1, C2, C3, and C5 (skip C4 because that tap is shorted)
+static const uint8_t CELL_REGS[NUM_CELLS] = {VC1_HI, VC2_HI, VC3_HI, VC5_HI};
+static const int CELL_LABELS[NUM_CELLS] = {1, 2, 3, 5};
+static const int TEMP_PINS[NUM_TEMPS] = {THERM1_PIN, THERM2_PIN};
+

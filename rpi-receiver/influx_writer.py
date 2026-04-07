@@ -179,30 +179,18 @@ class InfluxWriter:
 
         avg_temp = float(np.mean(all_temps))
 
-        # SOC estimation via ML models is intentionally disabled for pipeline-only testing.
-        # Previous behavior kept for reference:
-        #   1) LSTM cloud estimate
-        #   2) NARX edge estimate from payload
-        #   3) default placeholder
-        # narx_soc = None
-        # for mod_data in self._module_data.values():
-        #     if "soc_estimate" in mod_data:
-        #         narx_soc = mod_data["soc_estimate"]
-        #         break
-        #
-        # lstm_soc = self._get_lstm_soc(
-        #     voltage=total_voltage,
-        #     current=total_current,
-        #     temperature=avg_temp,
-        # )
-        #
-        # if lstm_soc is not None:
-        #     soc = round(lstm_soc, 2)
-        # elif narx_soc is not None:
-        #     soc = round(float(narx_soc), 2)
-        # else:
-        #     soc = PLACEHOLDER_SOC
-        soc = PLACEHOLDER_SOC
+        # Use NARX edge SOC from sensing ESPs. Average valid estimates across modules.
+        # Falls back to placeholder if no module reports a valid SOC.
+        narx_socs = []
+        for mod_data in self._module_data.values():
+            est = mod_data.get("soc_estimate")
+            if est is not None and float(est) >= 0:
+                narx_socs.append(float(est))
+
+        if narx_socs:
+            soc = round(float(np.mean(narx_socs)), 2)
+        else:
+            soc = PLACEHOLDER_SOC
 
         power_kw = round((total_voltage * total_current) / 1000.0, 3)
         point = (

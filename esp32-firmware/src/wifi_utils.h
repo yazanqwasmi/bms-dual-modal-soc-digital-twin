@@ -11,6 +11,7 @@
 
 inline void connectWiFi() {
     Serial.printf("Connecting to WiFi '%s'", WIFI_SSID);
+    WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     int attempts = 0;
@@ -34,6 +35,8 @@ inline void connectWiFi() {
 
 // endpoint — e.g. "/api/master" or "/api/sensing"
 inline bool sendData(const String& json, const char* endpoint) {
+    if (WiFi.status() != WL_CONNECTED) return false;
+
     HTTPClient http;
     String url = String("http://") + RPI_HOST + ":" + String(RPI_PORT) + endpoint;
 

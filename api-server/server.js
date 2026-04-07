@@ -7,8 +7,12 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import { config } from './src/config/environment.js';
 import { requestTimeout, errorHandler } from './src/middleware/index.js';
@@ -54,6 +58,14 @@ app.get('/api/v1/bms/stats', getStats);
 // ============================================
 
 setupWebSocket(wss);
+
+// ============================================
+// Static Dashboard
+// ============================================
+
+const distPath = path.join(__dirname, '../bms-dashboard-react/dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 
 // ============================================
 // Error Handling
