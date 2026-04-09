@@ -19,15 +19,15 @@ function NavTab({ active, icon, label, onClick }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '7px',
-        padding: '9px 14px',
-        borderRadius: '10px',
+        gap: '10px',
+        padding: '12px 20px',
+        borderRadius: '12px',
         border: 'none',
         background: active
           ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%)'
           : 'transparent',
         color: active ? '#00ff88' : 'rgba(255, 255, 255, 0.5)',
-        fontSize: '13px',
+        fontSize: '14px',
         fontWeight: active ? 600 : 500,
         cursor: 'pointer',
         transition: 'all 0.2s ease',
@@ -61,7 +61,7 @@ function NavTab({ active, icon, label, onClick }) {
           borderRadius: '0 4px 4px 0',
         }} />
       )}
-      <span style={{ fontSize: '15px' }}>{icon}</span>
+      <span style={{ fontSize: '18px' }}>{icon}</span>
       <span className="nav-tab-label">{label}</span>
     </button>
   )
@@ -92,13 +92,13 @@ function ActionButton({ icon, label, onClick, variant = 'default' }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        padding: '8px 12px',
-        borderRadius: '9px',
+        gap: '8px',
+        padding: '10px 16px',
+        borderRadius: '10px',
         border: `1px solid ${style.border}`,
         background: style.bg,
         color: style.color,
-        fontSize: '12px',
+        fontSize: '13px',
         fontWeight: 500,
         cursor: 'pointer',
         transition: 'all 0.2s ease',
@@ -133,7 +133,7 @@ function ConnectionBadge({ status }) {
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      padding: '6px 11px',
+      padding: '8px 14px',
       borderRadius: '20px',
       background: `${config.color}10`,
       border: `1px solid ${config.color}30`,
@@ -398,34 +398,32 @@ function App() {
           <div
             className="app-header-inner"
             style={{
-              maxWidth: '1600px',
-              margin: '0 auto',
+              width: '100%',
               padding: '12px 24px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              gap: '16px',
             }}
           >
             {/* Logo & Brand — on mobile this row also holds the settings icon */}
-            <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
                   background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.05) 100%)',
                   border: '1px solid rgba(0, 255, 136, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '19px',
+                  fontSize: '22px',
                 }}>
                   ⚡
                 </div>
                 <div>
                   <h1 style={{
-                    fontSize: '17px',
+                    fontSize: '20px',
                     fontWeight: 800,
                     margin: 0,
                     background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%)',
@@ -471,10 +469,10 @@ function App() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '2px',
-                padding: '4px',
+                gap: '4px',
+                padding: '6px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 border: '1px solid rgba(255, 255, 255, 0.04)',
               }}
             >
@@ -511,7 +509,7 @@ function App() {
             </nav>
 
             {/* Action Buttons */}
-            <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <ActionButton
                 icon="📥"
                 label="Export"
@@ -523,7 +521,7 @@ function App() {
                 onClick={() => setShowSettings(true)}
               />
               <div style={{
-                padding: '6px 11px',
+                padding: '8px 14px',
                 borderRadius: '8px',
                 background: 'rgba(0, 255, 136, 0.1)',
                 border: '1px solid rgba(0, 255, 136, 0.2)',

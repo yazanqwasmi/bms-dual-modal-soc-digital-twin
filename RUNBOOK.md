@@ -5,6 +5,7 @@
 - Mac and Raspberry Pi both connected to the same network (e.g. phone hotspot)
 - Docker Desktop running on Mac
 - Pi hostname set to `bmsgateway` with avahi broadcasting `bmsgateway.local`
+- Dashboard and API are hosted on the Pi (do not run dashboard locally on the Mac)
 
 ---
 
@@ -65,7 +66,7 @@ Open a terminal on the Pi:
 
 ```bash
 nvm use 16
-cd ~/bms/api-server
+cd ~/BWF/api-server
 export $(cat ../.env | grep -v '^#' | xargs)
 export INFLUXDB_TOKEN=$INFLUXDB_ADMIN_TOKEN
 export INFLUXDB_URL=http://<MAC_IP>:8086
@@ -87,7 +88,7 @@ curl http://bmsgateway.local:3002/health
 Open a second terminal on the Pi:
 
 ```bash
-cd ~/bms/rpi-receiver
+cd ~/BWF/rpi-receiver
 INFLUXDB_URL=http://<MAC_IP>:8086 \
 INFLUXDB_TOKEN=bms-super-secret-token \
 INFLUXDB_ORG=bms-org \
@@ -99,16 +100,105 @@ You should see `Sensing data written for M01: 4 cells` every ~3s once the ESP32 
 
 ---
 
-## 5. Mac — Start dashboard
+## 5. Pi — Start dashboard
 
 ```bash
-cd /Users/yazanqwasmi/BWF/bms-dashboard-react
-npm run dev
+cd ~/BWF/bms-dashboard-react
+npm install
+npm run build
+
+# Serve built dashboard from API server static mount
+# (api-server serves ../bms-dashboard-react/dist)
+cd ~/BWF/api-server
+sudo systemctl restart bms-api
 ```
 
-Open [http://localhost:5174](http://localhost:5174) in your browser.
+Open [http://bmsgateway.local:3002](http://bmsgateway.local:3002) in your browser.
 
-The dashboard fetches from `http://bmsgateway.local:3002` (set in `.env.local`).
+---
+
+## Pi-only deployment checklist (recommended)
+
+Run this on the Pi whenever code changes are deployed.
+
+### A) Update code on Pi
+
+```bash
+cd ~/BWF
+git pull
+```
+
+### B) Build dashboard on Pi
+
+```bash
+cd ~/BWF/bms-dashboard-react
+npm ci || npm install
+npm run build
+```
+
+### C) Install/update API dependencies on Pi
+
+```bash
+cd ~/BWF/api-server
+npm ci || npm install
+```
+
+### D) Restart services in order
+
+```bash
+sudo systemctl restart bms-api
+sudo systemctl restart bms-receiver || true
+```
+
+### E) Verify service status
+
+```bash
+sudo systemctl --no-pager --full status bms-api | head -n 40
+sudo systemctl --no-pager --full status bms-receiver | head -n 40 || true
+curl -sS http://localhost:3002/health
+```
+
+### F) Runtime validation
+
+- Open [http://bmsgateway.local:3002](http://bmsgateway.local:3002)
+- Go to Logs & Events and confirm alerts include `flag` and `source`
+- Confirm websocket updates continue every ~2s
+
+---
+
+## Systemd env update (Pi)
+
+If you change event thresholds, update the API service environment and restart:
+
+```bash
+sudo systemctl edit bms-api
+```
+
+Add overrides like:
+
+```ini
+[Service]
+Environment="EVENT_SOC_WARNING=20"
+Environment="EVENT_SOC_CRITICAL=10"
+Environment="EVENT_TEMP_WARNING=50"
+Environment="EVENT_TEMP_CRITICAL=60"
+Environment="EVENT_VOLTAGE_WARNING=36"
+Environment="EVENT_VOLTAGE_CRITICAL=33"
+Environment="EVENT_PACKET_LOSS_WARNING=30"
+Environment="EVENT_PACKET_LOSS_CRITICAL=60"
+Environment="EVENT_RSSI_WARNING=-85"
+Environment="EVENT_RSSI_CRITICAL=-95"
+Environment="EVENT_MODULE_OFFLINE_WARNING_MS=10000"
+Environment="EVENT_MODULE_OFFLINE_CRITICAL_MS=30000"
+Environment="EVENT_WRITE_COOLDOWN_MS=60000"
+```
+
+Then apply:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart bms-api
+```
 
 ---
 
@@ -120,7 +210,31 @@ The dashboard fetches from `http://bmsgateway.local:3002` (set in `.env.local`).
 | InfluxDB        | `curl http://localhost:8086/ping`                  |
 | api-server      | `curl http://bmsgateway.local:3002/health`         |
 | rpi-receiver    | Watch Pi terminal for `Sensing data written` logs  |
-| Dashboard       | http://localhost:5174                              |
+| Dashboard       | http://bmsgateway.local:3002                       |
+
+---
+
+## Event flag tuning (Pi)
+
+Optional API-server environment variables:
+
+```bash
+EVENT_SOC_WARNING=20
+EVENT_SOC_CRITICAL=10
+EVENT_TEMP_WARNING=50
+EVENT_TEMP_CRITICAL=60
+EVENT_VOLTAGE_WARNING=36
+EVENT_VOLTAGE_CRITICAL=33
+EVENT_PACKET_LOSS_WARNING=30
+EVENT_PACKET_LOSS_CRITICAL=60
+EVENT_RSSI_WARNING=-85
+EVENT_RSSI_CRITICAL=-95
+EVENT_MODULE_OFFLINE_WARNING_MS=10000
+EVENT_MODULE_OFFLINE_CRITICAL_MS=30000
+EVENT_WRITE_COOLDOWN_MS=60000
+```
+
+See [EVENT_FLAGS.md](EVENT_FLAGS.md) for the full catalog.
 
 ---
 

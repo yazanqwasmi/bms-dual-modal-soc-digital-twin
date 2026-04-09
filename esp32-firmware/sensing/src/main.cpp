@@ -34,7 +34,6 @@ uint8_t readByte(uint8_t reg);
 uint16_t readWord(uint8_t reg);
 float readCellmV(uint8_t regHi, int gain, int offset);
 float readThermistorC(int pin);
-float readCurrent(int pin);
 void blinkLED(int times, int delayMs);
 float getPacketLoss();
 void recordSendResult(bool success);
@@ -107,7 +106,7 @@ void loop() {
         temps[i] = getAverage(tempBuf[i]);
     }
 
-    float current = readCurrent(CURRENT_ADC_PIN);
+    float current = HARDCODED_CURRENT_A;
 
     int32_t rssi = WiFi.RSSI();
     float packetLoss = getPacketLoss();
@@ -245,18 +244,6 @@ void enableBQADC() {
     Wire.write(SYS_CTRL1);
     Wire.write(val | 0x10);
     Wire.endTransmission();
-}
-
-// ---- Read current from Hall-effect sensor (e.g. ACS712) ----
-float readCurrent(int pin) {
-    long sum = 0;
-    for (int i = 0; i < 16; i++) {
-        sum += analogRead(pin);
-        delayMicroseconds(100);
-    }
-    float adcValue = sum / 16.0f;
-    float voltage = (adcValue / ADC_RESOLUTION) * ADC_REF_VOLTAGE;
-    return (voltage - CURRENT_ZERO_OFFSET) / CURRENT_SENSITIVITY;
 }
 
 // ---- LED blink helper ----

@@ -1,20 +1,47 @@
 /**
  * Data Service - Fetches real BMS data from the API server
- * No mock fallback — if the API returns empty data, that's the real state.
+ * Live API only (no mock/demo mode)
  */
 
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3002'
+// Empty string = relative URLs (goes through same-origin Nginx proxy).
+// Fallback to localhost:3002 only for local dev without Docker.
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
 class DataService {
   constructor() {
-    this.mode = 'influxdb'
+    this.apiBase = API_BASE
+  }
+
+  normalizeApiBase(url) {
+    if (!url || typeof url !== 'string') return API_BASE
+    return url.replace(/\/+$/, '')
+  }
+
+  setApiBase(url) {
+    this.apiBase = this.normalizeApiBase(url)
+  }
+
+  getWebSocketUrl() {
+    const base = this.normalizeApiBase(this.apiBase)
+    if (!base) {
+      // Relative mode: derive from current page origin (works with any tunnel URL)
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      return `${protocol}//${window.location.host}/ws`
+    }
+    try {
+      const parsed = new URL(base)
+      const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:'
+      return `${protocol}//${parsed.host}/ws`
+    } catch {
+      return 'ws://localhost:3002/ws'
+    }
   }
 
   async getCurrentData() {
     try {
-      const response = await axios.get(`${API_BASE}/api/v1/bms/current`)
+      const response = await axios.get(`${this.apiBase}/api/v1/bms/current`)
       return response.data
     } catch (error) {
       console.error('API fetch failed:', error.message)
@@ -32,7 +59,7 @@ class DataService {
 
   async getHistoryData() {
     try {
-      const response = await axios.get(`${API_BASE}/api/v1/bms/history`)
+      const response = await axios.get(`${this.apiBase}/api/v1/bms/history`)
       return response.data
     } catch (error) {
       console.error('API history fetch failed:', error.message)
@@ -40,12 +67,20 @@ class DataService {
     }
   }
 
-  getMode() {
-    return this.mode
+  async getModuleHistory(moduleId, range = '1h') {
+    try {
+      const response = await axios.get(`${this.apiBase}/api/v1/bms/modules/${moduleId}/history`, {
+        params: { range },
+      })
+      return response.data
+    } catch (error) {
+      console.error('API module history fetch failed:', error.message)
+      return []
+    }
   }
 
-  setMode(mode) {
-    this.mode = mode
+  getMode() {
+    return 'influxdb'
   }
 }
 

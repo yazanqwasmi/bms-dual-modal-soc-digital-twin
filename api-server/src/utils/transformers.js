@@ -4,18 +4,44 @@
 
 /**
  * Known hardware topology — always return these modules
+ *
+ * OPTION B (mark M03 as permanently offline) — to enable, uncomment the M03
+ * entry below AND in the moduleMap seeding loop change the default for M03:
+ *   connected: false, healthStatus: 'Hardware Lost'
+ * That is all. The dashboard will show M03 as a dead slot with a distinct
+ * "Hardware Lost" label instead of hiding it entirely.
  */
 export const MODULE_TOPOLOGY = [
   { id: 'M01', numCells: 4, cellIds: ['C01','C02','C03','C04'] },
   { id: 'M02', numCells: 4, cellIds: ['C05','C06','C07','C08'] },
-  { id: 'M03', numCells: 4, cellIds: ['C09','C10','C11','C12'] },
+  // { id: 'M03', numCells: 4, cellIds: ['C09','C10','C11','C12'] }, // OPTION B: uncomment to restore M03 slot
 ];
 
 /**
  * Transform raw InfluxDB data into dashboard format
  */
-export function transformCurrentData(packData, moduleData, cellData, wirelessData, alertsData, contactorData, healthData) {
+export function transformCurrentData(packData, moduleData, cellData, wirelessData, alertsData, contactorData, healthData, masterStateData) {
   const pack = packData[0] || {};
+
+  const parseSocCorrected = (raw) => {
+    if (typeof raw === 'boolean') return raw;
+    if (typeof raw === 'number') return raw !== 0;
+    if (typeof raw === 'string') {
+      const val = raw.trim().toLowerCase();
+      if (val === 'true' || val === '1' || val === 'yes') return true;
+      if (val === 'false' || val === '0' || val === 'no' || val === '') return false;
+    }
+    return null;
+  };
+
+  const socNarx = Number(pack.soc_narx ?? pack.soc ?? 0);
+  const socLstm = pack.soc_lstm == null ? null : Number(pack.soc_lstm);
+  const socFinal = Number(pack.soc_final ?? pack.soc ?? socNarx);
+  const socDelta = Number(
+    pack.soc_correction_delta ?? (socLstm == null ? 0 : (socLstm - socNarx))
+  );
+  const parsedSocCorrected = parseSocCorrected(pack.soc_corrected);
+  const socCorrected = parsedSocCorrected ?? Math.abs(socFinal - socNarx) > 0.01;
 
   // Seed the module map with all known modules (Disconnected by default)
   const moduleMap = new Map();
@@ -96,6 +122,16 @@ export function transformCurrentData(packData, moduleData, cellData, wirelessDat
     precharge: contactor.precharge || 'Unknown',
   };
 
+  // Transform master state
+  const masterStateRow = ((masterStateData || [])[0]) || {};
+  const masterState = {
+    state: masterStateRow.state || null,
+    tripTempMin: masterStateRow.trip_temp_min ?? null,
+    tripTempMax: masterStateRow.trip_temp_max ?? null,
+    tripBadPollThreshold: masterStateRow.trip_bad_poll_threshold ?? null,
+    lastTripModule: masterStateRow.last_trip_module || null,
+  };
+
   // Transform alerts
   const alerts = (alertsData || []).map(a => ({
     timestamp: a._time,
@@ -108,7 +144,7 @@ export function transformCurrentData(packData, moduleData, cellData, wirelessDat
 
   return {
     timestamp: pack._time || new Date().toISOString(),
-    soc: pack.soc || 0,
+    soc: socFinal,
     soh: pack.soh || 0,
     voltage: pack.total_voltage || 0,
     current: pack.current || 0,
@@ -116,8 +152,16 @@ export function transformCurrentData(packData, moduleData, cellData, wirelessDat
     tempAvg: pack.avg_temp || 0,
     tempMax: pack.max_temp || 0,
     tempMin: pack.min_temp || 0,
+    socModels: {
+      narx: socNarx,
+      lstm: socLstm,
+      final: socFinal,
+      delta: socDelta,
+      corrected: socCorrected,
+    },
     modules: Array.from(moduleMap.values()),
     contactors,
+    masterState,
     alerts,
   };
 }

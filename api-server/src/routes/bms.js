@@ -5,6 +5,7 @@
 import { executeQuery, queryContactors, queryHealth } from '../utils/influxdb.js';
 import { fetchCurrentSnapshot } from '../utils/snapshot.js';
 import { config } from '../config/environment.js';
+import { deriveHistoryAlerts, mergeAlerts } from '../utils/eventFlags.js';
 
 /**
  * Get current pack status
@@ -31,6 +32,7 @@ export async function getHistory(req, res) {
       from(bucket: "${config.influxBucket}")
         |> range(start: -${range})
         |> filter(fn: (r) => r._measurement == "pack_metrics")
+        |> filter(fn: (r) => r._field != "soc_corrected")
         |> aggregateWindow(every: ${aggregateWindow}, fn: mean, createEmpty: false)
         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
         |> sort(columns: ["_time"])
@@ -40,6 +42,11 @@ export async function getHistory(req, res) {
     const response = historyData.map(row => ({
       timestamp: row._time,
       soc: row.soc || 0,
+      socNarx: row.soc_narx,
+      socLstm: row.soc_lstm,
+      socFinal: row.soc_final,
+      socCorrectionDelta: row.soc_correction_delta,
+      socCorrected: row.soc_corrected,
       soh: row.soh || 0,
       voltage: row.total_voltage || 0,
       current: row.current || 0,
@@ -47,6 +54,7 @@ export async function getHistory(req, res) {
       tempAvg: row.avg_temp || 0,
       tempMax: row.max_temp || 0,
       tempMin: row.min_temp || 0,
+      alerts: deriveHistoryAlerts(row),
     }));
 
     res.json(response);
@@ -102,7 +110,31 @@ export async function getAlerts(req, res) {
     `;
 
     const data = await executeQuery(query);
-    res.json(data);
+
+    // Fallback: derive alerts from pack history if no explicit alerts are present
+    if (!data || data.length === 0) {
+      const fallbackQuery = `
+        from(bucket: "${config.influxBucket}")
+          |> range(start: -${range})
+          |> filter(fn: (r) => r._measurement == "pack_metrics")
+          |> aggregateWindow(every: 30s, fn: mean, createEmpty: false)
+          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+          |> sort(columns: ["_time"], desc: true)
+          |> limit(n: ${limit})
+      `;
+
+      const fallbackRows = await executeQuery(fallbackQuery);
+      const derived = fallbackRows.flatMap((row) => deriveHistoryAlerts(row));
+      const filtered = derived.filter((alert) => {
+        if (severity && alert.severity !== severity) return false;
+        if (type && alert.type !== type) return false;
+        return true;
+      });
+
+      return res.json(mergeAlerts([], filtered).slice(0, Number(limit)));
+    }
+
+    return res.json(mergeAlerts(data, []));
   } catch (error) {
     console.error('Error fetching alerts:', error);
     res.status(500).json({ error: 'Failed to fetch alerts', details: error.message });

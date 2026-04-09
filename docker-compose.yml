@@ -89,13 +89,23 @@ services:
       context: ./bms-dashboard-react
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${DASHBOARD_API_URL:-http://localhost:3002}
+        # Empty string = relative URLs, so Nginx proxies /api and /ws on the same origin.
+        # This works whether accessed locally (localhost:3000) or via a public tunnel URL.
+        - VITE_API_URL=
     container_name: bms-dashboard
     ports:
       - "3000:80"
-    environment:
-      - VITE_USE_REAL_DATA=true
-      - VITE_API_URL=${DASHBOARD_API_URL:-http://localhost:3002}
+    restart: unless-stopped
+
+  # ============================================
+  # Cloudflare Tunnel - Public Access (no account needed)
+  # ============================================
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: bms-cloudflared
+    command: tunnel --no-autoupdate --url http://dashboard:80
+    depends_on:
+      - dashboard
     restart: unless-stopped
 
   # ============================================

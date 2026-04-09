@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import alertNotificationService from '../services/alertNotificationService';
 
 /**
  * Settings Panel Component
@@ -6,10 +7,19 @@ import React, { useState, useEffect, useCallback } from 'react';
  */
 export function SettingsPanel({ isOpen, onClose, settings, onSettingsChange }) {
   const [localSettings, setLocalSettings] = useState(settings);
+  const [notificationPermission, setNotificationPermission] = useState(
+    alertNotificationService.getNotificationPermission()
+  );
 
   useEffect(() => {
     setLocalSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNotificationPermission(alertNotificationService.getNotificationPermission());
+    }
+  }, [isOpen, settings]);
 
   const handleChange = (key, value) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
@@ -28,6 +38,35 @@ export function SettingsPanel({ isOpen, onClose, settings, onSettingsChange }) {
     onSettingsChange(defaults);
     localStorage.removeItem('bms-dashboard-settings');
   };
+
+  const handleTestSound = useCallback(() => {
+    alertNotificationService.updateSettings({
+      ...localSettings,
+      enableSoundAlerts: true,
+    });
+    alertNotificationService.testSound('warning');
+  }, [localSettings]);
+
+  const handleTestNotification = useCallback(async () => {
+    alertNotificationService.updateSettings({
+      ...localSettings,
+      enableBrowserNotifications: true,
+    });
+    const ok = await alertNotificationService.testNotification();
+    setNotificationPermission(alertNotificationService.getNotificationPermission());
+    if (!ok) {
+      console.warn('Browser notifications were not granted.');
+    }
+  }, [localSettings]);
+
+  const permissionLabel =
+    notificationPermission === 'granted'
+      ? 'Granted'
+      : notificationPermission === 'denied'
+        ? 'Blocked'
+        : notificationPermission === 'unsupported'
+          ? 'Unsupported'
+          : 'Not granted';
 
   if (!isOpen) return null;
 
@@ -68,53 +107,26 @@ export function SettingsPanel({ isOpen, onClose, settings, onSettingsChange }) {
           </button>
         </div>
 
-        {/* Data Source */}
-        <div style={{ marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-            Data Source
-          </h3>
-          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-            <input
-              type="radio"
-              checked={localSettings.dataSource === 'mock'}
-              onChange={() => handleChange('dataSource', 'mock')}
-              style={{ marginRight: '8px' }}
-            />
-            Mock Data (Demo Mode)
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center' }}>
-            <input
-              type="radio"
-              checked={localSettings.dataSource === 'api'}
-              onChange={() => handleChange('dataSource', 'api')}
-              style={{ marginRight: '8px' }}
-            />
-            Live API (InfluxDB)
-          </label>
-        </div>
-
         {/* API URL */}
-        {localSettings.dataSource === 'api' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-              API Server URL
-            </label>
-            <input
-              type="text"
-              value={localSettings.apiUrl}
-              onChange={(e) => handleChange('apiUrl', e.target.value)}
-              placeholder="http://localhost:3002"
-              style={{
-                width: '100%',
-                padding: '10px',
-                backgroundColor: 'var(--bg-tertiary, #3d3d4d)',
-                border: '1px solid var(--border-color, #4d4d5d)',
-                borderRadius: '4px',
-                color: 'var(--text-primary)',
-              }}
-            />
-          </div>
-        )}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+            API Server URL
+          </label>
+          <input
+            type="text"
+            value={localSettings.apiUrl}
+            onChange={(e) => handleChange('apiUrl', e.target.value)}
+            placeholder="http://localhost:3002"
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'var(--bg-tertiary, #3d3d4d)',
+              border: '1px solid var(--border-color, #4d4d5d)',
+              borderRadius: '4px',
+              color: 'var(--text-primary)',
+            }}
+          />
+        </div>
 
         {/* Refresh Interval */}
         <div style={{ marginBottom: '20px' }}>
@@ -164,6 +176,48 @@ export function SettingsPanel({ isOpen, onClose, settings, onSettingsChange }) {
             />
             Critical Alerts Only
           </label>
+
+          <div style={{
+            marginTop: '12px',
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span>Browser Permission: {permissionLabel}</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+            <button
+              onClick={handleTestSound}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: '4px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'transparent',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+              }}
+            >
+              Test Sound
+            </button>
+            <button
+              onClick={handleTestNotification}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: '4px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'transparent',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+              }}
+            >
+              Test Browser Notification
+            </button>
+          </div>
         </div>
 
         {/* Display */}
@@ -280,8 +334,7 @@ export function SettingsPanel({ isOpen, onClose, settings, onSettingsChange }) {
  */
 export function getDefaultSettings() {
   return {
-    dataSource: 'mock',
-    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3002',
+    apiUrl: import.meta.env.VITE_API_URL || 'http://bmsgateway.local:3002',
     refreshInterval: 5000,
     enableSoundAlerts: false,
     enableBrowserNotifications: false,

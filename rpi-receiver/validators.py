@@ -71,7 +71,7 @@ def validate_master(payload: dict) -> list:
             if state not in VALID_CONTACTOR_STATES:
                 errors.append(f"contactors.{key} = '{state}' is not valid. Expected {VALID_CONTACTOR_STATES}")
 
-    # Validate module_health
+    # Validate module_health — null values are allowed (module not yet seen)
     module_health = payload.get("module_health")
     if not isinstance(module_health, dict):
         errors.append("'module_health' must be an object")
@@ -79,7 +79,7 @@ def validate_master(payload: dict) -> list:
         for mod_id, status in module_health.items():
             if mod_id not in VALID_MODULE_IDS:
                 errors.append(f"module_health key '{mod_id}' is not a valid module ID")
-            if status not in VALID_HEALTH_STATES:
-                errors.append(f"module_health.{mod_id} = '{status}' is not valid. Expected {VALID_HEALTH_STATES}")
+            if status is not None and status not in VALID_HEALTH_STATES:
+                errors.append(f"module_health.{mod_id} = '{status}' is not valid. Expected {VALID_HEALTH_STATES} or null")
 
     return errors

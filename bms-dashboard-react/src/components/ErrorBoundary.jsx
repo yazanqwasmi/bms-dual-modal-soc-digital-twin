@@ -1,5 +1,7 @@
 import React from 'react';
 
+const isDev = import.meta.env.DEV;
+
 /**
  * Error Boundary Component
  * Catches JavaScript errors anywhere in child component tree and displays fallback UI
@@ -53,7 +55,7 @@ class ErrorBoundary extends React.Component {
             <p style={{ color: '#a0a0a0', marginBottom: '20px' }}>
               {this.props.fallbackMessage || 'An error occurred while rendering this component.'}
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {this.state.error && (
               <details style={{ 
                 textAlign: 'left', 
                 marginBottom: '20px',

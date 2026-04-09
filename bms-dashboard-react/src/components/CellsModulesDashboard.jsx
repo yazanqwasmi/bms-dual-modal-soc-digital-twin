@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell
 } from 'recharts'
 import { CustomTooltip } from './shared.jsx'
+import dataService from '../services/dataService.js'
 
 // Cell Voltage Heat Map Cell
 const CellVoltageCell = ({ cell, isSelected, onClick }) => {
@@ -10,16 +11,18 @@ const CellVoltageCell = ({ cell, isSelected, onClick }) => {
   const noData = voltage === 0
   const minV = 3.2
   const maxV = 4.2
+  const idealV = 3.65
   const normalizedV = noData ? 0 : Math.max(0, Math.min(1, (voltage - minV) / (maxV - minV)))
+  const distFromIdeal = noData ? 1 : Math.abs(voltage - idealV)
 
-  // Color gradient from red (low) through yellow to green (high)
+  // Color based on distance from ideal 3.65V
   const getColor = (v) => {
     if (noData) return '#555'
-    if (v < 0.2) return '#ff4757'
-    if (v < 0.4) return '#ff9f43'
-    if (v < 0.6) return '#ffd93d'
-    if (v < 0.8) return '#00d4ff'
-    return '#00ff88'
+    if (distFromIdeal < 0.05) return '#00ff88'   // within ±50mV → green
+    if (distFromIdeal < 0.15) return '#00d4ff'   // within ±150mV → cyan
+    if (distFromIdeal < 0.30) return '#ffd93d'   // within ±300mV → yellow
+    if (v < 0.2) return '#ff4757'                // very low → red
+    return '#ff9f43'                             // far from ideal → orange
   }
 
   const color = getColor(normalizedV)
@@ -217,7 +220,32 @@ const ModuleCard = ({ module, isSelected, onClick }) => {
 
 export function CellsModulesDashboard({ data }) {
   const [selectedModuleId, setSelectedModuleId] = useState(null)
-  
+  const [moduleHistory, setModuleHistory] = useState([])
+
+  const modules = (data.current?.modules) || []
+
+  useEffect(() => {
+    if (!modules.length) {
+      setSelectedModuleId(null)
+      return
+    }
+    const selectedStillExists = selectedModuleId && modules.some((m) => m.id === selectedModuleId)
+    if (!selectedStillExists) {
+      const firstConnected = modules.find((m) => m.connected !== false)
+      setSelectedModuleId((firstConnected || modules[0]).id)
+    }
+  }, [modules, selectedModuleId])
+
+  useEffect(() => {
+    if (!selectedModuleId) return
+    let cancelled = false
+    dataService.getModuleHistory(selectedModuleId).then((rows) => {
+      if (cancelled) return
+      setModuleHistory(rows)
+    })
+    return () => { cancelled = true }
+  }, [selectedModuleId])
+
   if (!data.current) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -226,22 +254,6 @@ export function CellsModulesDashboard({ data }) {
       </div>
     )
   }
-
-  const { current } = data
-  const modules = current.modules || []
-
-  useEffect(() => {
-    if (!modules.length) {
-      setSelectedModuleId(null)
-      return
-    }
-
-    const selectedStillExists = selectedModuleId && modules.some((m) => m.id === selectedModuleId)
-    if (!selectedStillExists) {
-      const firstConnected = modules.find((m) => m.connected !== false)
-      setSelectedModuleId((firstConnected || modules[0]).id)
-    }
-  }, [modules, selectedModuleId])
 
   const selectedModuleIndex = selectedModuleId
     ? modules.findIndex((m) => m.id === selectedModuleId)
@@ -271,17 +283,13 @@ export function CellsModulesDashboard({ data }) {
     temp: parseFloat((c.temp || 0).toFixed(1)),
   }))
 
-  // History data for selected module
-  const historyData = (data.history || []).slice(-60).map((item) => {
-    const mod = (item.modules || []).find((m) => m.id === module.id)
-    if (!mod) return null
-    return {
-      time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      voltage: parseFloat((mod.voltage || 0).toFixed(3)),
-      temp: parseFloat((mod.tempAvg || 0).toFixed(1)),
-      deltaV: parseFloat(((mod.deltaV || 0) * 1000).toFixed(1)),
-    }
-  }).filter(Boolean)
+  // History data from module-specific API endpoint
+  const historyData = moduleHistory.slice(-60).map((row) => ({
+    time: new Date(row._time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    voltage: parseFloat((row.voltage || 0).toFixed(3)),
+    temp: parseFloat((row.avg_temp || 0).toFixed(1)),
+    deltaV: parseFloat((row.delta_v_mv || 0).toFixed(1)),
+  }))
 
   // Get voltage colors for bar chart
   const getVoltageColor = (voltage) => {
@@ -642,13 +650,14 @@ export function CellsModulesDashboard({ data }) {
                 fill="url(#moduleVoltGradient)"
                 dot={false}
               />
-              <Line
+              <Area
                 yAxisId="right"
                 type="monotone"
                 dataKey="temp"
                 name="Temp °C"
                 stroke="#ff9f43"
                 strokeWidth={2}
+                fill="none"
                 dot={false}
               />
             </AreaChart>

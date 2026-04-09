@@ -86,6 +86,7 @@ const AlertCard = ({ alert }) => {
           display: 'flex',
           alignItems: 'center',
           gap: '16px',
+          flexWrap: 'wrap',
           fontSize: '12px',
           color: 'rgba(255,255,255,0.5)',
         }}>
@@ -94,6 +95,26 @@ const AlertCard = ({ alert }) => {
           </span>
           <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>
             Threshold: {alert.threshold}
+          </span>
+          {alert.flag && (
+            <span style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '999px',
+              padding: '2px 8px',
+            }}>
+              Flag: {alert.flag}
+            </span>
+          )}
+          <span style={{
+            fontFamily: '"JetBrains Mono", monospace',
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '999px',
+            padding: '2px 8px',
+          }}>
+            Source: {alert.source || 'influx'}
           </span>
         </div>
       </div>
@@ -146,6 +167,7 @@ const FilterButton = ({ active, onClick, children }) => (
 export function LogsEventsDashboard({ data }) {
   const [severityFilter, setSeverityFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState('all')
 
   if (!data.current) {
     return (
@@ -163,7 +185,8 @@ export function LogsEventsDashboard({ data }) {
   const filteredAlerts = alerts.filter((alert) => {
     const severityMatch = severityFilter === 'all' || alert.severity === severityFilter
     const typeMatch = typeFilter === 'all' || alert.type === typeFilter
-    return severityMatch && typeMatch
+    const sourceMatch = sourceFilter === 'all' || (alert.source || 'influx') === sourceFilter
+    return severityMatch && typeMatch && sourceMatch
   })
 
   // Count by severity
@@ -469,6 +492,21 @@ export function LogsEventsDashboard({ data }) {
             <FilterButton active={typeFilter === 'temp'} onClick={() => setTypeFilter('temp')}>Temp</FilterButton>
             <FilterButton active={typeFilter === 'wireless'} onClick={() => setTypeFilter('wireless')}>Wireless</FilterButton>
             <FilterButton active={typeFilter === 'soc'} onClick={() => setTypeFilter('soc')}>SOC</FilterButton>
+            <FilterButton active={typeFilter === 'module_health'} onClick={() => setTypeFilter('module_health')}>Module</FilterButton>
+            <FilterButton active={typeFilter === 'contactors'} onClick={() => setTypeFilter('contactors')}>Contactors</FilterButton>
+          </div>
+        </div>
+
+        <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Source
+          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <FilterButton active={sourceFilter === 'all'} onClick={() => setSourceFilter('all')}>All</FilterButton>
+            <FilterButton active={sourceFilter === 'influx'} onClick={() => setSourceFilter('influx')}>Influx</FilterButton>
+            <FilterButton active={sourceFilter === 'derived'} onClick={() => setSourceFilter('derived')}>Derived</FilterButton>
           </div>
         </div>
         

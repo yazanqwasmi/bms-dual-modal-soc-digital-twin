@@ -22,16 +22,12 @@
 #define NUM_CELLS       4
 #define NUM_TEMPS       2
 
-// ---------------- Optional current sensor ----------------
-#define CURRENT_ADC_PIN       26
-#define CURRENT_SENSITIVITY   0.066f
-#define CURRENT_ZERO_OFFSET   1.65f
+// ---------------- Current (hardcoded — no sensor) ----------------
+#define HARDCODED_CURRENT_A   0.1f
 
 // ---------------- General ----------------
 #define PACKET_LOSS_WINDOW    20
-#define LED_PIN               2
-#define ADC_RESOLUTION        4095.0f
-#define ADC_REF_VOLTAGE       3.3f
+#define LED_PIN               38
 
 // ---------------- BQ76920 / sensing pins ----------------
 #define SDA_PIN               17

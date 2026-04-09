@@ -93,6 +93,13 @@ docker compose up -d
 | **Settings** | Configuration panel |
 | **Data Export** | CSV/JSON export |
 
+### Pi-hosted mode (recommended)
+
+Host the built dashboard on the Raspberry Pi through the API server static mount.
+
+- URL: `http://bmsgateway.local:3002`
+- Avoid running dashboard dev server on the Mac for production use.
+
 ## API Endpoints
 
 Base URL: `http://localhost:3002`
@@ -108,6 +115,10 @@ Base URL: `http://localhost:3002`
 | GET | `/api/v1/bms/export?measurement=pack_metrics&format=csv` | Data export |
 | GET | `/api/v1/bms/stats` | 24h statistics and aggregations |
 | WS  | `/ws` | Real-time pack updates (2s interval) |
+
+## Event Flags
+
+Derived and persisted event flags are documented in [EVENT_FLAGS.md](EVENT_FLAGS.md).
 
 ## Data Schema
 

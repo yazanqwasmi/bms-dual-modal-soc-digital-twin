@@ -12,6 +12,58 @@ class AlertNotificationService {
     this.audioContext = null;
   }
 
+  getNotificationPermission() {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return 'unsupported';
+    }
+    return Notification.permission;
+  }
+
+  async requestNotificationPermission() {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return 'unsupported';
+    }
+    if (Notification.permission === 'granted') return 'granted';
+
+    try {
+      const permission = await Notification.requestPermission();
+      return permission;
+    } catch (error) {
+      console.warn('Notification permission request failed:', error);
+      return Notification.permission || 'default';
+    }
+  }
+
+  ensureAudioContext() {
+    if (typeof window === 'undefined') return null;
+    if (!this.audioContext) {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(() => {});
+    }
+    return this.audioContext;
+  }
+
+  playTone(frequency, type = 'sine', gain = 0.1, duration = 0.2, atTime = null) {
+    const ctx = this.ensureAudioContext();
+    if (!ctx) return;
+
+    const start = atTime ?? ctx.currentTime;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    gainNode.gain.value = gain;
+
+    oscillator.start(start);
+    oscillator.stop(start + duration);
+  }
+
   /**
    * Update notification settings
    */
@@ -21,8 +73,8 @@ class AlertNotificationService {
     this.criticalOnly = settings.criticalAlertsOnly !== false;
     
     // Request browser notification permission if enabled
-    if (this.browserNotificationsEnabled && 'Notification' in window) {
-      Notification.requestPermission();
+    if (this.browserNotificationsEnabled) {
+      this.requestNotificationPermission();
     }
   }
 
@@ -68,56 +120,28 @@ class AlertNotificationService {
    */
   playAlertSound(severity) {
     try {
-      if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-
-      const ctx = this.audioContext;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
       // Different sounds for different severities
       switch (severity) {
         case 'critical':
-          oscillator.frequency.value = 880; // A5 - high pitch
-          oscillator.type = 'square';
-          gainNode.gain.value = 0.3;
           // Pulse pattern
-          for (let i = 0; i < 3; i++) {
-            setTimeout(() => {
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.frequency.value = 880;
-              osc.type = 'square';
-              gain.gain.value = 0.2;
-              osc.start();
-              osc.stop(ctx.currentTime + 0.1);
-            }, i * 200);
+          {
+            const ctx = this.ensureAudioContext();
+            if (!ctx) return;
+            const base = ctx.currentTime;
+            for (let i = 0; i < 3; i++) {
+              this.playTone(880, 'square', 0.2, 0.1, base + (i * 0.2));
+            }
           }
           return;
         case 'warning':
-          oscillator.frequency.value = 440; // A4 - medium pitch
-          oscillator.type = 'triangle';
-          gainNode.gain.value = 0.2;
+          this.playTone(440, 'triangle', 0.2, 0.2);
           break;
         case 'info':
-          oscillator.frequency.value = 330; // E4 - low pitch
-          oscillator.type = 'sine';
-          gainNode.gain.value = 0.1;
+          this.playTone(330, 'sine', 0.1, 0.2);
           break;
         default:
-          oscillator.frequency.value = 440;
-          oscillator.type = 'sine';
-          gainNode.gain.value = 0.1;
+          this.playTone(440, 'sine', 0.1, 0.2);
       }
-
-      oscillator.start();
-      oscillator.stop(ctx.currentTime + 0.2);
     } catch (error) {
       console.warn('Could not play alert sound:', error);
     }
@@ -155,12 +179,18 @@ class AlertNotificationService {
   /**
    * Test browser notification
    */
-  testNotification() {
+  async testNotification() {
+    if (this.getNotificationPermission() !== 'granted') {
+      const permission = await this.requestNotificationPermission();
+      if (permission !== 'granted') return false;
+    }
+
     this.showBrowserNotification({
       severity: 'info',
       type: 'test',
       message: 'This is a test notification from BMS Dashboard',
     });
+    return true;
   }
 }
 

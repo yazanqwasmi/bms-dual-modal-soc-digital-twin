@@ -2,11 +2,14 @@
  * InfluxDB client initialization and query utilities
  */
 
-import { InfluxDB } from '@influxdata/influxdb-client';
+import { InfluxDB, Point } from '@influxdata/influxdb-client';
 import { config } from '../config/environment.js';
 
 const influxDB = new InfluxDB({ url: config.influxUrl, token: config.influxToken });
 export const queryApi = influxDB.getQueryApi(config.influxOrg);
+const writeApi = influxDB.getWriteApi(config.influxOrg, config.influxBucket, 'ms');
+const alertWriteCooldownMs = Number(process.env.EVENT_WRITE_COOLDOWN_MS ?? 60000);
+const recentAlertWrites = new Map();
 
 /**
  * Execute InfluxDB query with retry logic
@@ -97,19 +100,82 @@ export async function queryAlerts(range = '1h') {
 export async function queryContactors() {
   return executeQuery(`
     from(bucket: "${config.influxBucket}")
-      |> range(start: -1m)
+      |> range(start: -2m)
       |> filter(fn: (r) => r._measurement == "contactor_status")
-      |> last()
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n: 1)
   `);
 }
 
 export async function queryHealth() {
   return executeQuery(`
     from(bucket: "${config.influxBucket}")
-      |> range(start: -1m)
+      |> range(start: -2m)
       |> filter(fn: (r) => r._measurement == "module_health")
-      |> last()
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> group(columns: ["module_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n: 1)
   `);
+}
+
+export async function queryMasterState() {
+  return executeQuery(`
+    from(bucket: "${config.influxBucket}")
+      |> range(start: -2m)
+      |> filter(fn: (r) => r._measurement == "master_state")
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n: 1)
+  `);
+}
+
+export async function writeDerivedAlerts(alerts = []) {
+  if (!Array.isArray(alerts) || alerts.length === 0) return;
+
+  const now = Date.now();
+
+  alerts.forEach((alert) => {
+    const timestamp = alert.timestamp || new Date().toISOString();
+    const severity = String(alert.severity || 'info');
+    const type = String(alert.type || 'unknown');
+    const flag = String(alert.flag || 'derived_event');
+    const message = String(alert.message || '');
+    const source = String(alert.source || 'derived');
+    const value = Number(alert.value ?? 0);
+    const threshold = Number(alert.threshold ?? 0);
+    const dedupeKey = `${severity}|${type}|${flag}|${message}`;
+    const last = recentAlertWrites.get(dedupeKey) || 0;
+
+    if (now - last < alertWriteCooldownMs) return;
+    recentAlertWrites.set(dedupeKey, now);
+
+    writeApi
+      .writePoint(
+        new Point('alerts')
+          .tag('severity', severity)
+          .tag('alert_type', type)
+          .tag('flag', flag)
+          .tag('source', source)
+          .stringField('message', message)
+          .floatField('value', Number.isFinite(value) ? value : 0)
+          .floatField('threshold', Number.isFinite(threshold) ? threshold : 0)
+          .timestamp(new Date(timestamp))
+      );
+  });
+
+  try {
+    await writeApi.flush();
+  } catch (error) {
+    console.warn('Failed to write derived alerts:', error.message);
+  }
+
+  // Keep in-memory dedupe map bounded
+  if (recentAlertWrites.size > 2000) {
+    const keepAfter = now - (alertWriteCooldownMs * 2);
+    for (const [key, ts] of recentAlertWrites.entries()) {
+      if (ts < keepAfter) recentAlertWrites.delete(key);
+    }
+  }
 }

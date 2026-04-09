@@ -214,6 +214,7 @@ export function ContactorsDashboard({ data, settings }) {
   const current = data?.current
   const contactors = current?.contactors || {}
   const modules = current?.modules || []
+  const masterState = current?.masterState || {}
 
   const anyConnected = useMemo(() =>
     modules.some(m => m.connected),
@@ -238,7 +239,7 @@ export function ContactorsDashboard({ data, settings }) {
   const status = statusConfig[systemStatus]
 
   return (
-    <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
+    <div style={{ width: '100%', margin: '0 auto', padding: 'clamp(16px, 3vw, 48px)' }}>
       {/* System Status Banner */}
       <div style={{
         background: `${status.color}08`,
@@ -273,12 +274,28 @@ export function ContactorsDashboard({ data, settings }) {
             {status.label}
           </div>
         </div>
-        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
-            Pack Configuration
-          </div>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginTop: '2px' }}>
-            3 Modules / 12 Cells / 6 Temps
+        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          {masterState.state && (
+            <div style={{
+              padding: '4px 12px',
+              borderRadius: '8px',
+              background: 'rgba(0, 212, 255, 0.1)',
+              border: '1px solid rgba(0, 212, 255, 0.25)',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#00d4ff',
+              letterSpacing: '0.5px',
+            }}>
+              {masterState.state}
+            </div>
+          )}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
+              Pack Configuration
+            </div>
+            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginTop: '2px' }}>
+              3 Modules / 12 Cells / 6 Temps
+            </div>
           </div>
         </div>
       </div>

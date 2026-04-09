@@ -1,11 +1,9 @@
 import React, { useMemo } from 'react'
 import {
-  LineChart, Line, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+  Line, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 import { CustomTooltip, StatCard } from './shared.jsx'
-
-const SHOW_SOC_CORRECTION_DEMO = import.meta.env.VITE_ENABLE_SOC_CORRECTION_DEMO === 'true'
 
 // Circular Gauge Component — uses viewBox so it scales with CSS width
 const GAUGE_SIZE = 160
@@ -520,64 +518,6 @@ export function OverviewDashboard({ data }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Optional demo: LSTM correction trend (removable via VITE_ENABLE_SOC_CORRECTION_DEMO=false) */}
-      {SHOW_SOC_CORRECTION_DEMO && (
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.02)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(52, 152, 255, 0.22)',
-          borderRadius: '24px',
-          padding: '24px',
-          marginBottom: '24px',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '20px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '4px',
-                height: '24px',
-                background: 'linear-gradient(135deg, #7cc4ff 0%, #3498ff 100%)',
-                borderRadius: '4px',
-              }} />
-              <span style={{ fontSize: '16px', fontWeight: 600, color: 'rgba(255,255,255,0.92)' }}>
-                SOC Correction Delta Trend
-              </span>
-            </div>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
-              Δ = LSTM − NARX (%)
-            </span>
-          </div>
-
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={historyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="time" stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} />
-              <YAxis
-                stroke="rgba(255,255,255,0.3)"
-                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
-                domain={['auto', 'auto']}
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend formatter={(value) => <span style={{ color: 'rgba(255,255,255,0.7)' }}>{value}</span>} />
-              <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="4 4" />
-              <Line
-                type="monotone"
-                dataKey="socDelta"
-                name="Correction Δ %"
-                stroke="#7cc4ff"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 5, fill: '#7cc4ff', stroke: '#000', strokeWidth: 1.5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
 
       {/* Two Column Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
